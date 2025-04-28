@@ -15,10 +15,11 @@ import {
   PlusCircle,
   Check,
   X,
+  EditIcon,
 } from "lucide-react";
 import axiosInstance from "../authComponent/axiosConnection";
 import { useUser } from "../context/UserContext";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 // Dummy data
 // const userData = {
 //   name: "Alex Johnson",
@@ -138,21 +139,32 @@ const UserProfile = ({ id }) => {
         const connectionsResponse = await axiosInstance.get(
           `/api/connect/getAllConnections/${userId}`
         );
+        console.log(connectionsResponse);
         const data = await Promise.all(
-          connectionsResponse.data.map(async (item) => {
-            const userdata = await axiosInstance.get(
-              `/api/users/get/${item.connected_user_id}`
-            );
-            return {
-              user_id: userdata.data.user_id,
-              user_name: userdata.data.username,
-              grade_level: userdata.data.grade_level,
-              bio: userdata.data.bio,
-            };
-          })
-        );
+          connectionsResponse.data
+            .filter((item) => item.status == "accepted")
+            .map(async (item) => {
+              console.log(item);
+              let connected_user_id =
+                item.connection_recoverid == userId
+                  ? item.connection_senderid
+                  : item.connection_recoverid;
 
-        console.log(data); // Now `data` will be fully resolved
+              console.log(connected_user_id);
+              const userdata = await axiosInstance.get(
+                `/api/users/get/${connected_user_id}`
+              );
+              console.log(userdata);
+              return {
+                user_id: userdata.data.user_id,
+                user_name: userdata.data.first_name,
+                last_name: userdata.data.last_name,
+                grade_level: userdata.data.grade_level,
+              };
+            })
+        );
+        console.log(data);
+        console.log(connectionsResponse); // Now `data` will be fully resolved
         setConnections(data);
       } catch (error) {
         console.error("Error fetching posts:", error);
@@ -165,15 +177,19 @@ const UserProfile = ({ id }) => {
         console.log(requestsResponse);
         const requestsData = await Promise.all(
           requestsResponse.data.map(async (item) => {
+            let connected_user_id = item.connection_senderid;
+
+            console.log(connected_user_id);
             const userdata = await axiosInstance.get(
-              `/api/users/get/${item.connection_senderid}`
+              `/api/users/get/${connected_user_id}`
             );
+            console.log(userdata);
             return {
+              user_id: userdata.data.user_id,
+              user_name: userdata.data.first_name,
+              last_name: userdata.data.last_name,
+              grade_level: userdata.data.grade_level,
               request_id: item.connection_id,
-              user_id: userdata.user_id,
-              user_name: userdata.first_name,
-              grade_level: userdata.grade_level,
-              bio: userdata.bio,
             };
           })
         );
@@ -193,10 +209,56 @@ const UserProfile = ({ id }) => {
       const requestsResponse = await axiosInstance.get(
         `/api/connect/getAllConnectionsRequest/${userId}`
       );
-      setConnectionRequests(requestsResponse.data);
+      const requestsData = await Promise.all(
+        requestsResponse.data.map(async (item) => {
+          let connected_user_id = item.connection_senderid;
+
+          console.log(connected_user_id);
+          const userdata = await axiosInstance.get(
+            `/api/users/get/${connected_user_id}`
+          );
+          console.log(userdata);
+          return {
+            user_id: userdata.data.user_id,
+            user_name: userdata.data.first_name,
+            last_name: userdata.data.last_name,
+            grade_level: userdata.data.grade_level,
+            request_id: item.connection_id,
+          };
+        })
+      );
+      setConnectionRequests(requestsData);
+
       const connectionsResponse = await axiosInstance.get(
         `/api/connect/getAllConnections/${userId}`
       );
+      console.log(connectionsResponse);
+      const data = await Promise.all(
+        connectionsResponse.data
+          .filter((item) => item.status == "accepted")
+          .map(async (item) => {
+            console.log(item);
+            let connected_user_id =
+              item.connection_recoverid == userId
+                ? item.connection_senderid
+                : item.connection_recoverid;
+
+            console.log(connected_user_id);
+            const userdata = await axiosInstance.get(
+              `/api/users/get/${connected_user_id}`
+            );
+            console.log(userdata);
+            return {
+              user_id: userdata.data.user_id,
+              user_name: userdata.data.first_name,
+              last_name: userdata.data.last_name,
+              grade_level: userdata.data.grade_level,
+            };
+          })
+      );
+      console.log(data);
+      console.log(connectionsResponse); // Now `data` will be fully resolved
+      setConnections(data);
     } catch (error) {
       console.error("Error accepting connection:", error);
     }
@@ -209,7 +271,25 @@ const UserProfile = ({ id }) => {
       const requestsResponse = await axiosInstance.get(
         `/api/connect/getAllConnectionsRequest/${userId}`
       );
-      setConnectionRequests(requestsResponse.data);
+      const requestsData = await Promise.all(
+        requestsResponse.data.map(async (item) => {
+          let connected_user_id = item.connection_senderid;
+
+          console.log(connected_user_id);
+          const userdata = await axiosInstance.get(
+            `/api/users/get/${connected_user_id}`
+          );
+          console.log(userdata);
+          return {
+            user_id: userdata.data.user_id,
+            user_name: userdata.data.first_name,
+            last_name: userdata.data.last_name,
+            grade_level: userdata.data.grade_level,
+            request_id: item.connection_id,
+          };
+        })
+      );
+      setConnectionRequests(requestsData);
     } catch (error) {
       console.error("Error rejecting connection:", error);
     }
@@ -236,8 +316,23 @@ const UserProfile = ({ id }) => {
               <div className="flex items-start justify-between">
                 <div className="flex space-x-4">
                   <div className="relative">
-                    <div className="w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center">
-                      <User className="w-12 h-12 text-blue-600" />
+                    <div className="w-22 h-22 rounded-full bg-blue-100 flex items-center justify-center">
+                      {/* <User className="w-12 h-12 text-blue-600" /> */}
+                      <img
+                        src={
+                          userData
+                            ? `https://ui-avatars.com/api/?name=${
+                                userData.first_name + " " + userData.last_name
+                              }&background=random`
+                            : "https://ui-avatars.com/api/?name=User&background=random"
+                        }
+                        alt={
+                          userData
+                            ? `${userData.first_name} ${userData.last_name}`
+                            : "User"
+                        }
+                        className="w-20 h-20 rounded-full object-cover"
+                      />
                     </div>
                     <div className="absolute -bottom-2 right-0 bg-green-500 w-5 h-5 rounded-full border-2 border-white"></div>
                   </div>
@@ -257,17 +352,26 @@ const UserProfile = ({ id }) => {
                         <Mail className="w-4 h-4 mr-1" />
                         {userData.email}
                       </span>
-                      <span className="flex items-center text-sm text-gray-500">
+                      {/* <span className="flex items-center text-sm text-gray-500">
                         <Calendar className="w-4 h-4 mr-1" />
                         Joined {userData.joinDate}
-                      </span>
+                      </span> */}
                     </div>
                   </div>
                 </div>
-                <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Connect
-                </button>
+                {userId == localStorage.getItem("userId") ? (
+                  <Link to="../add-skills">
+                    <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center">
+                      <EditIcon className="w-4 h-4 mr-2" />
+                      Edit Skills
+                    </button>
+                  </Link>
+                ) : (
+                  <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Connect
+                  </button>
+                )}
               </div>
 
               {/* Skills */}
@@ -366,10 +470,12 @@ const UserProfile = ({ id }) => {
           {/* Right Column - Sidebar */}
           <div className="col-span-12 lg:col-span-4 space-y-6">
             {/* Create Roadmap Button */}
-            <button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 flex items-center justify-center space-x-2">
-              <PlusCircle className="w-5 h-5" />
-              <span>Create New Roadmap</span>
-            </button>
+            <Link to={"/"}>
+              <button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 flex items-center justify-center space-x-2">
+                <PlusCircle className="w-5 h-5" />
+                <span>Create New Roadmap</span>
+              </button>
+            </Link>
 
             {/* Connection Requests */}
             {connectionRequests.length > 0 && (
@@ -377,6 +483,7 @@ const UserProfile = ({ id }) => {
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-lg font-semibold">Connection Requests</h2>
                   <span className="text-sm text-gray-500">
+                    {console.log(connectionRequests)}
                     {connectionRequests.length} requests
                   </span>
                 </div>
@@ -386,17 +493,36 @@ const UserProfile = ({ id }) => {
                       key={request.request_id}
                       className="flex items-center justify-between"
                     >
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                          <User className="w-5 h-5 text-gray-600" />
+                      {console.log(request)}
+                      <Link to={`/${request.user_id}`}>
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                            <img
+                              src={
+                                request
+                                  ? `https://ui-avatars.com/api/?name=${
+                                      request.user_name +
+                                      " " +
+                                      request.last_name
+                                    }&background=random`
+                                  : "https://ui-avatars.com/api/?name=User&background=random"
+                              }
+                              alt={
+                                request
+                                  ? `${request.user_name} ${request.last_name}`
+                                  : "User"
+                              }
+                              className="w-10 h-10 rounded-full object-cover"
+                            />
+                          </div>
+                          <div>
+                            <h3 className="font-medium">{request.user_name}</h3>
+                            <p className="text-sm text-gray-500">
+                              {request.bio || request.grade_level}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <h3 className="font-medium">{request.user_name}</h3>
-                          <p className="text-sm text-gray-500">
-                            {request.bio || request.grade_level}
-                          </p>
-                        </div>
-                      </div>
+                      </Link>
                       <div className="flex space-x-2">
                         <button
                           onClick={() =>
@@ -452,25 +578,46 @@ const UserProfile = ({ id }) => {
               </div>
               <div className="space-y-4">
                 {connections.map((connection) => (
-                  <div
-                    key={connection.user_id}
-                    className="flex items-center justify-between"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                        <User className="w-5 h-5 text-gray-600" />
+                  <Link to={`/${connection.user_id}`}>
+                    <div
+                      key={connection.user_id}
+                      className="flex items-center justify-between"
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                          <img
+                            src={
+                              connection
+                                ? `https://ui-avatars.com/api/?name=${
+                                    connection.user_name +
+                                    " " +
+                                    connection.last_name
+                                  }&background=random`
+                                : "https://ui-avatars.com/api/?name=User&background=random"
+                            }
+                            alt={
+                              connection
+                                ? `${connection.user_name} ${connection.last_name}`
+                                : "User"
+                            }
+                            className="w-10 h-10 rounded-full object-cover"
+                          />
+                        </div>
+                        <div>
+                          <h3 className="font-medium">
+                            {connection.user_name}
+                          </h3>
+                          <p className="text-sm text-gray-500">
+                            {connection.bio || connection.grade_level}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="font-medium">{connection.user_name}</h3>
-                        <p className="text-sm text-gray-500">
-                          {connection.bio || connection.grade_level}
-                        </p>
-                      </div>
+
+                      <span className="text-xs text-gray-500">
+                        {parseInt(Math.random() * 10)} mutual
+                      </span>
                     </div>
-                    <span className="text-xs text-gray-500">
-                      {parseInt(Math.random() * 10)} mutual
-                    </span>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </div>

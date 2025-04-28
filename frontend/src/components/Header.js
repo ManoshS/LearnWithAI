@@ -1,12 +1,45 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { User, Brain } from "lucide-react";
 import { useUser } from "../context/UserContext";
 import { NavLink, useLocation } from "react-router-dom";
+import axiosInstance from "../authComponent/axiosConnection";
 
 const Header = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [userDetails, setUserDetails] = useState(null);
   const user = useUser();
   const location = useLocation();
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const fetchUserDetails = async () => {
+      try {
+        const userId = localStorage.getItem("userId");
+        if (userId) {
+          const response = await axiosInstance.get(`/api/users/get/${userId}`);
+          console.log(response.data);
+          setUserDetails(response.data);
+        }
+      } catch (error) {
+        console.error("Error fetching user details:", error);
+      }
+    };
+
+    fetchUserDetails();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsProfileOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const isActive = (path) => {
     return location.pathname === path;
@@ -24,6 +57,10 @@ const Header = () => {
     localStorage.removeItem("jwtToken");
     // Redirect to login page
     window.location.href = "/login";
+  };
+
+  const handleMenuItemClick = () => {
+    setIsProfileOpen(false);
   };
 
   return (
@@ -62,12 +99,27 @@ const Header = () => {
             </button>
 
             {/* Profile Dropdown */}
-            <div className="relative">
+            <div className="relative" ref={dropdownRef}>
               <button
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
                 className="p-2 rounded-full hover:bg-gray-100 transition-colors"
               >
-                <User className="w-6 h-6 text-gray-600" />
+                {/* <User className="w-6 h-6 text-gray-600" /> */}
+                <img
+                  src={
+                    userDetails
+                      ? `https://ui-avatars.com/api/?name=${
+                          userDetails.first_name + " " + userDetails.last_name
+                        }&background=random`
+                      : "https://ui-avatars.com/api/?name=User&background=random"
+                  }
+                  alt={
+                    userDetails
+                      ? `${userDetails.first_name} ${userDetails.last_name}`
+                      : "User"
+                  }
+                  className="w-8 h-8 rounded-full object-cover"
+                />
               </button>
 
               {/* Dropdown Menu */}
@@ -81,25 +133,31 @@ const Header = () => {
                     className={`block px-4 py-2 ${linkStyle(
                       `/${user?.userId}`
                     )}`}
+                    onClick={handleMenuItemClick}
                   >
                     Your Profile
                   </NavLink>
                   <NavLink
                     to="/skills"
                     className={`block px-4 py-2 ${linkStyle("/skills")}`}
+                    onClick={handleMenuItemClick}
                   >
                     Manage Skills
                   </NavLink>
                   <NavLink
                     to="/settings"
                     className={`block px-4 py-2 ${linkStyle("/settings")}`}
+                    onClick={handleMenuItemClick}
                   >
                     Settings
                   </NavLink>
                   <NavLink
                     to="/login"
                     className={`block px-4 py-2 ${linkStyle("/logout")}`}
-                    onClick={handleLogout}
+                    onClick={() => {
+                      handleMenuItemClick();
+                      handleLogout();
+                    }}
                   >
                     Logout
                   </NavLink>

@@ -186,6 +186,12 @@ const AddSkills = () => {
                 style={{ width: "100%" }}
                 placeholder="Select your skills"
                 options={availableSkills}
+                showSearch
+                filterOption={(input, option) =>
+                  (option?.label ?? "")
+                    .toLowerCase()
+                    .includes(input.toLowerCase())
+                }
                 onChange={(selectedSkills) => {
                   const currentValues = form.getFieldsValue();
                   const newValues = { ...currentValues };

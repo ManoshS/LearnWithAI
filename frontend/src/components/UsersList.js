@@ -11,7 +11,7 @@ import {
   Search,
   Filter,
 } from "lucide-react";
-
+import { Link } from "react-router-dom";
 // Mentors Component
 const MentorsGrid = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -20,12 +20,10 @@ const MentorsGrid = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [connections, setConnections] = useState([]);
-  const [pendingConnections, setPendingConnections] = useState([]);
 
   useEffect(() => {
     fetchMentors();
     fetchConnections();
-    fetchPendingConnections();
   }, []);
 
   const fetchConnections = async () => {
@@ -40,28 +38,22 @@ const MentorsGrid = () => {
     }
   };
 
-  const fetchPendingConnections = async () => {
-    try {
-      const userId = localStorage.getItem("userId");
-      const response = await axiosInstance.get(
-        `/api/connect/getAllConnectionsRequest/${userId}`
-      );
-      setPendingConnections(response.data);
-    } catch (err) {
-      console.error("Error fetching pending connections:", err);
-    }
-  };
-
-  const getConnectionStatus = (mentorId) => {
+  const getConnectionStatus = (userId) => {
     // Check if there's an accepted connection
     const isConnected = connections.some(
-      (conn) => conn.connected_user_id === mentorId
+      (conn) =>
+        conn.status === "accepted" &&
+        (conn.connection_recoverid === userId ||
+          conn.connection_senderid === userId)
     );
     if (isConnected) return "connected";
 
     // Check if there's a pending connection
-    const isPending = pendingConnections.some(
-      (conn) => conn.connection_senderid === mentorId
+    const isPending = connections.some(
+      (conn) =>
+        conn.status === "pending" &&
+        (conn.connection_recoverid === userId ||
+          conn.connection_senderid === userId)
     );
     if (isPending) return "pending";
 
@@ -98,19 +90,23 @@ const MentorsGrid = () => {
     }
   };
 
-  const handleConnect = async (mentorId) => {
+  const handleConnect = async (userId) => {
     try {
       await axiosInstance.post("/api/connect/addConnection", {
-        connection_recover_id: mentorId,
+        connection_recover_id: userId,
         connection_sender_id: localStorage.getItem("userId"),
       });
-      // Update local state to show pending status
-      setPendingConnections((prev) => [
+      // Update connections state to include the new pending connection
+      setConnections((prev) => [
         ...prev,
-        { connection_senderid: mentorId },
+        {
+          connection_recoverid: userId,
+          connection_senderid: localStorage.getItem("userId"),
+          status: "pending",
+        },
       ]);
     } catch (err) {
-      console.error("Error connecting with mentor:", err);
+      console.error("Error connecting with user:", err);
     }
   };
 
@@ -238,29 +234,30 @@ const MentorsGrid = () => {
                 whileHover={{ y: -5 }}
                 className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6"
               >
-                <div className="flex gap-4">
-                  <img
-                    src={
-                      mentor.profile_image ||
-                      `https://ui-avatars.com/api/?name=${
-                        mentor.first_name + " " + mentor.last_name
-                      }&background=random`
-                    }
-                    alt={`${mentor.first_name} ${mentor.last_name}`}
-                    className="w-13 h-13 rounded-full object-cover"
-                  />
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-lg text-gray-900">{`${mentor.first_name} ${mentor.last_name}`}</h3>
-                    <p className="text-gray-600 text-sm">
-                      {mentor.expertise || "Teacher"}
-                    </p>
-                    <p className="text-gray-500 text-sm flex items-center gap-1">
-                      <Briefcase className="w-4 h-4" />
-                      {mentor.organization || "Educational Institution"}
-                    </p>
+                <Link to={`/${mentor.teacher_id}`}>
+                  <div className="flex gap-4">
+                    <img
+                      src={
+                        mentor.profile_image ||
+                        `https://ui-avatars.com/api/?name=${
+                          mentor.first_name + " " + mentor.last_name
+                        }&background=random`
+                      }
+                      alt={`${mentor.first_name} ${mentor.last_name}`}
+                      className="w-13 h-13 rounded-full object-cover"
+                    />
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg text-gray-900">{`${mentor.first_name} ${mentor.last_name}`}</h3>
+                      <p className="text-gray-600 text-sm">
+                        {mentor.expertise || "Teacher"}
+                      </p>
+                      <p className="text-gray-500 text-sm flex items-center gap-1">
+                        <Briefcase className="w-4 h-4" />
+                        {mentor.organization || "Educational Institution"}
+                      </p>
+                    </div>
                   </div>
-                </div>
-
+                </Link>
                 <div className="mt-4 flex items-center gap-4">
                   <div className="flex items-center gap-1">
                     <Star className="w-4 h-4 text-yellow-400" />
@@ -336,12 +333,10 @@ const LearnersGrid = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [connections, setConnections] = useState([]);
-  const [pendingConnections, setPendingConnections] = useState([]);
 
   useEffect(() => {
     fetchLearners();
     fetchConnections();
-    fetchPendingConnections();
   }, []);
 
   const fetchConnections = async () => {
@@ -350,35 +345,31 @@ const LearnersGrid = () => {
       const response = await axiosInstance.get(
         `/api/connect/getAllConnections/${userId}`
       );
+      console.log(response.data);
       setConnections(response.data);
     } catch (err) {
       console.error("Error fetching connections:", err);
     }
   };
 
-  const fetchPendingConnections = async () => {
-    try {
-      const userId = localStorage.getItem("userId");
-      const response = await axiosInstance.get(
-        `/api/connect/getAllConnectionsRequest/${userId}`
-      );
-      setPendingConnections(response.data);
-    } catch (err) {
-      console.error("Error fetching pending connections:", err);
-    }
-  };
-
   const getConnectionStatus = (learnerId) => {
     // Check if there's an accepted connection
     const isConnected = connections.some(
-      (conn) => conn.connected_user_id === learnerId
+      (conn) =>
+        conn.status == "accepted" &&
+        (conn.connection_recoverid === learnerId ||
+          conn.connection_senderid === learnerId)
     );
     if (isConnected) return "connected";
 
     // Check if there's a pending connection
-    const isPending = pendingConnections.some(
-      (conn) => conn.connection_senderid === learnerId
+    const isPending = connections.some(
+      (conn) =>
+        conn.status == "pending" &&
+        (conn.connection_recoverid === learnerId ||
+          conn.connection_senderid === learnerId)
     );
+
     if (isPending) return "pending";
 
     return "not_connected";
@@ -414,19 +405,23 @@ const LearnersGrid = () => {
     }
   };
 
-  const handleConnect = async (learnerId) => {
+  const handleConnect = async (userId) => {
     try {
       await axiosInstance.post("/api/connect/addConnection", {
-        connection_recover_id: learnerId,
+        connection_recover_id: userId,
         connection_sender_id: localStorage.getItem("userId"),
       });
-      // Update local state to show pending status
-      setPendingConnections((prev) => [
+      // Update connections state to include the new pending connection
+      setConnections((prev) => [
         ...prev,
-        { connection_senderid: learnerId },
+        {
+          connection_recoverid: userId,
+          connection_senderid: localStorage.getItem("userId"),
+          status: "pending",
+        },
       ]);
     } catch (err) {
-      console.error("Error connecting with learner:", err);
+      console.error("Error connecting with user:", err);
     }
   };
 
@@ -558,32 +553,33 @@ const LearnersGrid = () => {
                   whileHover={{ y: -5 }}
                   className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6"
                 >
-                  <div className="flex gap-4">
-                    <img
-                      src={
-                        learner.profile_image ||
-                        `https://ui-avatars.com/api/?name=${
-                          learner.first_name + " " + learner.last_name
-                        }&background=random`
-                      }
-                      alt={`${learner.first_name} ${learner.last_name}`}
-                      className="w-13 h-13 rounded-full object-cover"
-                    />
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-lg text-gray-900">{`${learner.first_name} ${learner.last_name}`}</h3>
-                      <p className="text-gray-600 text-sm flex items-center gap-1">
-                        <GraduationCap className="w-4 h-4" />
-                        {learner.level || "Beginner"} Level
-                      </p>
-                      <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-green-500 h-2 rounded-full"
-                          style={{ width: `${learner.progress || 0}%` }}
-                        />
+                  <Link to={`/${learner.student_id}`}>
+                    <div className="flex gap-4">
+                      <img
+                        src={
+                          learner.profile_image ||
+                          `https://ui-avatars.com/api/?name=${
+                            learner.first_name + " " + learner.last_name
+                          }&background=random`
+                        }
+                        alt={`${learner.first_name} ${learner.last_name}`}
+                        className="w-13 h-13 rounded-full object-cover"
+                      />
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-lg text-gray-900">{`${learner.first_name} ${learner.last_name}`}</h3>
+                        <p className="text-gray-600 text-sm flex items-center gap-1">
+                          <GraduationCap className="w-4 h-4" />
+                          {learner.level || "Beginner"} Level
+                        </p>
+                        <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className="bg-green-500 h-2 rounded-full"
+                            style={{ width: `${learner.progress || 0}%` }}
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
-
+                  </Link>
                   <div className="mt-4">
                     <p className="text-sm text-gray-600">
                       {learner.goals || "Learning and growing"}
@@ -603,7 +599,9 @@ const LearnersGrid = () => {
 
                   <div className="mt-4 flex gap-2">
                     <button
-                      onClick={() => handleConnect(learner.student_id)}
+                      onClick={() => {
+                        handleConnect(learner.student_id);
+                      }}
                       disabled={isConnected || isPending}
                       className={`flex-1 py-2 rounded-lg transition-colors flex items-center justify-center gap-2 ${
                         isConnected
