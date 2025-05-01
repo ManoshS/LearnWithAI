@@ -16,10 +16,11 @@ import {
   Check,
   X,
   EditIcon,
+  MessageCircle,
 } from "lucide-react";
 import axiosInstance from "../authComponent/axiosConnection";
 import { useUser } from "../context/UserContext";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 // Dummy data
 // const userData = {
 //   name: "Alex Johnson",
@@ -105,7 +106,12 @@ const UserProfile = ({ id }) => {
   const [connectionRequests, setConnectionRequests] = useState([]);
   const [showAllSkills, setShowAllSkills] = useState(false);
   const [data, setData] = useState(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState("not_connected");
   const { userId } = useParams();
+  const navigate = useNavigate();
+  const currentUserId = localStorage.getItem("userId");
+  const [totalConnections, setTotalConnections] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -142,7 +148,12 @@ const UserProfile = ({ id }) => {
         console.log(connectionsResponse);
         const data = await Promise.all(
           connectionsResponse.data
-            .filter((item) => item.status == "accepted")
+            .filter(
+              (item) =>
+                item.status == "accepted" &&
+                (item.connection_recoverid == userId ||
+                  item.connection_senderid == userId)
+            )
             .map(async (item) => {
               console.log(item);
               let connected_user_id =
@@ -166,10 +177,21 @@ const UserProfile = ({ id }) => {
         console.log(data);
         console.log(connectionsResponse); // Now `data` will be fully resolved
         setConnections(data);
+        console.log(connectionsResponse.data);
+        const acceptedConnections = connectionsResponse.data.filter(
+          (item) =>
+            item.status == "accepted" &&
+            (item.connection_recoverid == userId ||
+              item.connection_senderid == userId)
+        );
+        setTotalConnections(acceptedConnections.length);
       } catch (error) {
         console.error("Error fetching posts:", error);
       }
 
+      if (userId != currentUserId) {
+        return;
+      }
       try {
         const requestsResponse = await axiosInstance.get(
           `/api/connect/getAllConnectionsRequest/${userId}`
@@ -201,6 +223,130 @@ const UserProfile = ({ id }) => {
 
     fetchData();
   }, [userId]);
+  // Separate useEffect for fetching user data
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const response = await axiosInstance.get(`/api/users/get/${userId}`);
+        setData(response.data);
+        setUserData(response.data);
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
+    };
+
+    fetchUserData();
+  }, [userId]);
+
+  // Separate useEffect for fetching skills
+  useEffect(() => {
+    const fetchSkills = async () => {
+      try {
+        const skillsResponse = await axiosInstance.get(
+          `/api/users/getSkillsById/${userId}`
+        );
+        setSkills(skillsResponse.data || []);
+      } catch (error) {
+        console.error("Error fetching skills:", error);
+      }
+    };
+
+    fetchSkills();
+  }, [userId]);
+
+  // Separate useEffect for fetching posts
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const postsResponse = await axiosInstance.get(
+          `/api/posts/getAllPosts/${userId}`
+        );
+        setPosts(postsResponse.data);
+      } catch (error) {
+        console.error("Error fetching posts:", error);
+      }
+    };
+
+    fetchPosts();
+  }, [userId]);
+
+  // Separate useEffect for checking connection status
+  useEffect(() => {
+    const checkConnectionStatus = async () => {
+      if (userId === currentUserId) {
+        setIsConnected(false);
+        setConnectionStatus("not_connected");
+        return;
+      }
+
+      try {
+        const connectionsResponse = await axiosInstance.get(
+          `/api/connect/getAllConnections/${currentUserId}`
+        );
+        const isUsersConnected = connectionsResponse.data.some(
+          (conn) =>
+            conn.status === "accepted" &&
+            (conn.connection_senderid === parseInt(userId) ||
+              conn.connection_recoverid === parseInt(userId))
+        );
+        const isPending = connectionsResponse.data.some(
+          (conn) =>
+            conn.status === "pending" &&
+            (conn.connection_senderid === parseInt(userId) ||
+              conn.connection_recoverid === parseInt(userId))
+        );
+        setIsConnected(isUsersConnected);
+        if (isUsersConnected) setConnectionStatus("connected");
+        else if (isPending) setConnectionStatus("pending");
+        else setConnectionStatus("not_connected");
+      } catch (error) {
+        console.error("Error checking connection status:", error);
+        setIsConnected(false);
+        setConnectionStatus("not_connected");
+      }
+    };
+
+    checkConnectionStatus();
+  }, [userId, currentUserId]);
+
+  // Separate useEffect for fetching connections
+  useEffect(() => {
+    const fetchConnections = async () => {
+      try {
+        const connectionsResponse = await axiosInstance.get(
+          `/api/connect/getAllConnections/${currentUserId}`
+        );
+        const data = await Promise.all(
+          connectionsResponse.data
+            .filter((item) => item.status === "accepted")
+            .map(async (item) => {
+              let connected_user_id =
+                item.connection_recoverid === parseInt(currentUserId)
+                  ? item.connection_senderid
+                  : item.connection_recoverid;
+
+              const userdata = await axiosInstance.get(
+                `/api/users/get/${connected_user_id}`
+              );
+              return {
+                user_id: userdata.data.user_id,
+                user_name: userdata.data.first_name,
+                last_name: userdata.data.last_name,
+                grade_level: userdata.data.grade_level,
+              };
+            })
+        );
+        console.log(data);
+        console.log(connectionsResponse); // Now `data` will be fully resolved
+        setConnections(data);
+      } catch (error) {
+        console.error("Error fetching connections:", error);
+      }
+    };
+
+    fetchConnections();
+  }, [currentUserId]);
 
   const handleAcceptConnection = async (requestId) => {
     try {
@@ -235,7 +381,12 @@ const UserProfile = ({ id }) => {
       console.log(connectionsResponse);
       const data = await Promise.all(
         connectionsResponse.data
-          .filter((item) => item.status == "accepted")
+          .filter(
+            (item) =>
+              item.status == "accepted" &&
+              (item.connection_recoverid == userId ||
+                item.connection_senderid == userId)
+          )
           .map(async (item) => {
             console.log(item);
             let connected_user_id =
@@ -292,6 +443,22 @@ const UserProfile = ({ id }) => {
       setConnectionRequests(requestsData);
     } catch (error) {
       console.error("Error rejecting connection:", error);
+    }
+  };
+
+  const handleChatClick = () => {
+    navigate(`/chat/${userId}`);
+  };
+
+  const handleConnect = async () => {
+    try {
+      await axiosInstance.post("/api/connect/addConnection", {
+        connection_recover_id: userId,
+        connection_sender_id: currentUserId,
+      });
+      setConnectionStatus("pending");
+    } catch (err) {
+      console.error("Error connecting with user:", err);
     }
   };
 
@@ -359,19 +526,56 @@ const UserProfile = ({ id }) => {
                     </div>
                   </div>
                 </div>
-                {userId == localStorage.getItem("userId") ? (
-                  <Link to="../add-skills">
-                    <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center">
-                      <EditIcon className="w-4 h-4 mr-2" />
-                      Edit Skills
+                <div className="flex gap-2">
+                  {userId !== currentUserId && isConnected && (
+                    <button
+                      onClick={handleChatClick}
+                      className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors duration-200 flex items-center"
+                    >
+                      <MessageCircle className="w-4 h-4 mr-2" />
+                      Chat
                     </button>
-                  </Link>
-                ) : (
-                  <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Connect
-                  </button>
-                )}
+                  )}
+                  {userId === currentUserId ? (
+                    <Link to="../add-skills">
+                      <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center">
+                        <EditIcon className="w-4 h-4 mr-2" />
+                        Edit Skills
+                      </button>
+                    </Link>
+                  ) : (
+                    <button
+                      onClick={handleConnect}
+                      disabled={connectionStatus !== "not_connected"}
+                      className={`bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors duration-200 flex items-center
+                        ${
+                          connectionStatus === "connected"
+                            ? "bg-gray-500 cursor-not-allowed"
+                            : ""
+                        }
+                        ${
+                          connectionStatus === "pending"
+                            ? "bg-yellow-500 cursor-not-allowed"
+                            : ""
+                        }
+                      `}
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      {connectionStatus === "connected"
+                        ? "Connected"
+                        : connectionStatus === "pending"
+                        ? "Pending"
+                        : "Connect"}
+                    </button>
+                  )}
+                  {userId === currentUserId && (
+                    <Link to="/chat-list">
+                      <button className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center">
+                        View All Chats
+                      </button>
+                    </Link>
+                  )}
+                </div>
               </div>
 
               {/* Skills */}
@@ -488,6 +692,7 @@ const UserProfile = ({ id }) => {
                   </span>
                 </div>
                 <div className="space-y-4">
+                  {console.log(connectionRequests)}
                   {connectionRequests.map((request) => (
                     <div
                       key={request.request_id}
@@ -573,7 +778,7 @@ const UserProfile = ({ id }) => {
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg font-semibold">Connections</h2>
                 <span className="text-sm text-gray-500">
-                  {connections.length} connections
+                  {totalConnections} connections
                 </span>
               </div>
               <div className="space-y-4">

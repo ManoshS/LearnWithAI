@@ -35,11 +35,13 @@ exports.findAllConnects = async (req, res) => {
   try {
     const data = await connections.findAllConnects(req.params.id);
     if (!data) {
-      return res.status(404).json({ "message ": "Not found" });
+      return res.status(404).json({ message: "No connections found" });
     }
+    console.log("Found connections:", data);
     res.status(200).json(data);
   } catch (err) {
-    res.status(500).json({ err: err.message });
+    console.error("Error finding connections:", err);
+    res.status(500).json({ error: err.message });
   }
 };
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { User, Brain } from "lucide-react";
+import { Brain } from "lucide-react";
 import { useUser } from "../context/UserContext";
 import { NavLink, useLocation } from "react-router-dom";
 import axiosInstance from "../authComponent/axiosConnection";
@@ -15,6 +15,7 @@ const Header = () => {
     const fetchUserDetails = async () => {
       try {
         const userId = localStorage.getItem("userId");
+        console.log(userId);
         if (userId) {
           const response = await axiosInstance.get(`/api/users/get/${userId}`);
           console.log(response.data);

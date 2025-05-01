@@ -1,67 +1,49 @@
-class SocketController {
-    constructor() {
-      this.users = new Map();
-      this.chatRooms = new Map();
-    }
-  
-    handleConnection(socket, io) {
-      console.log('New client connected');
-  
-      socket.on('register', (username) => this.handleRegistration(socket, io, username));
-      socket.on('joinRoom', (roomId) => this.handleJoinRoom(socket, roomId));
-      socket.on('groupMessage', (data) => this.handleGroupMessage(socket, io, data));
-      socket.on('privateMessage', (data) => this.handlePrivateMessage(socket, io, data));
-      socket.on('disconnect', () => this.handleDisconnection(socket, io));
-    }
-  
-    handleRegistration(socket, io, username) {
-      this.users.set(username, socket.id);
-      socket.username = username;
-      io.emit('userList', Array.from(this.users.keys()));
-    }
-  
-    handleJoinRoom(socket, roomId) {
-      socket.join(roomId);
-      if (!this.chatRooms.has(roomId)) {
-        this.chatRooms.set(roomId, { messages: [] });
-      }
-      socket.emit('previousMessages', this.chatRooms.get(roomId).messages);
-    }
-  
-    handleGroupMessage(socket, io, data) {
-      const messageData = {
-        sender: socket.username,
-        content: data.content,
-        timestamp: new Date(),
-        roomId: data.roomId
-      };
-      
-      this.chatRooms.get(data.roomId).messages.push(messageData);
-      io.to(data.roomId).emit('newGroupMessage', messageData);
-    }
-  
-    handlePrivateMessage(socket, io, data) {
-      const recipientSocketId = this.users.get(data.recipient);
-      if (recipientSocketId) {
-        const messageData = {
-          sender: socket.username,
-          content: data.content,
-          timestamp: new Date(),
-          isPrivate: true
-        };
-        
-        io.to(recipientSocketId).emit('newPrivateMessage', messageData);
-        socket.emit('newPrivateMessage', messageData);
-      }
-    }
-  
-    handleDisconnection(socket, io) {
-      if (socket.username) {
-        this.users.delete(socket.username);
-        io.emit('userList', Array.from(this.users.keys()));
-      }
-      console.log('Client disconnected');
-    }
-  }
-  
-  module.exports = new SocketController();
+const handleConnection = (socket, io) => {
+  console.log("Client connected:", socket.id);
+
+  // Handle user joining their room
+  socket.on("join", (userId) => {
+    socket.join(`user:${userId}`);
+    console.log(`User ${userId} joined their room: user:${userId}`);
+  });
+
+  // Handle new message
+  socket.on("new_message", (data) => {
+    const { receiverId, message } = data;
+    console.log("New message received:", { receiverId, message });
+
+    // Create a unique room for this conversation
+    const conversationRoom = `conversation:${Math.min(
+      message.sender_id,
+      receiverId
+    )}:${Math.max(message.sender_id, receiverId)}`;
+
+    // Join both users to the conversation room
+    socket.join(conversationRoom);
+
+    // Emit to the conversation room
+    io.to(conversationRoom).emit("new_message", message);
+
+    // Also emit to individual user rooms for backup
+    io.to(`user:${receiverId}`).emit("new_message", message);
+    io.to(`user:${message.sender_id}`).emit("new_message", message);
+  });
+
+  // Handle typing status
+  socket.on("typing", (data) => {
+    const { receiverId, isTyping } = data;
+    io.to(`user:${receiverId}`).emit("user_typing", {
+      userId: socket.id,
+      isTyping,
+    });
+  });
+
+  // Handle disconnection
+  socket.on("disconnect", () => {
+    console.log("Client disconnected:", socket.id);
+  });
+};
+
+module.exports = {
+  handleConnection,
+};

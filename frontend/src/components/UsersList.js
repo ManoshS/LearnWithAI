@@ -11,7 +11,7 @@ import {
   Search,
   Filter,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 // Mentors Component
 const MentorsGrid = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -20,6 +20,8 @@ const MentorsGrid = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [connections, setConnections] = useState([]);
+  const [userConnectionsCount, setUserConnectionsCount] = useState({});
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchMentors();
@@ -58,6 +60,19 @@ const MentorsGrid = () => {
     if (isPending) return "pending";
 
     return "not_connected";
+  };
+
+  const getTotalConnections = async (userId) => {
+    const response = await axiosInstance.get(
+      `/api/connect/getAllConnections/${userId}`
+    );
+
+    return response.data.filter(
+      (conn) =>
+        conn.status === "accepted" &&
+        (conn.connection_recoverid === userId ||
+          conn.connection_senderid === userId)
+    ).length;
   };
 
   const fetchMentors = async () => {
@@ -110,6 +125,10 @@ const MentorsGrid = () => {
     }
   };
 
+  const handleMessageClick = (userId) => {
+    navigate(`/chat/${userId}`);
+  };
+
   const filteredMentors = React.useMemo(
     () =>
       mentors?.filter((mentor) => {
@@ -132,6 +151,32 @@ const MentorsGrid = () => {
       }),
     [mentors, searchQuery, selectedSkill]
   );
+
+  // Helper to fetch and cache total connections for a user
+  const fetchUserConnectionsCount = async (userId) => {
+    if (userConnectionsCount[userId] !== undefined) return; // Already fetched
+    try {
+      const response = await axiosInstance.get(
+        `/api/connect/getAllConnections/${userId}`
+      );
+      const count = response.data.filter(
+        (conn) =>
+          conn.status === "accepted" &&
+          (conn.connection_recoverid === userId ||
+            conn.connection_senderid === userId)
+      ).length;
+      setUserConnectionsCount((prev) => ({ ...prev, [userId]: count }));
+    } catch (err) {
+      setUserConnectionsCount((prev) => ({ ...prev, [userId]: 0 }));
+    }
+  };
+
+  useEffect(() => {
+    filteredMentors.forEach((mentor) => {
+      if (mentor && mentor.teacher_id)
+        fetchUserConnectionsCount(mentor.teacher_id);
+    });
+  }, [filteredMentors]);
 
   if (loading) return <div>Loading mentors...</div>;
   if (error) return <div>{error}</div>;
@@ -271,6 +316,15 @@ const MentorsGrid = () => {
                       {mentor.students_count || "0"} students
                     </span>
                   </div>
+                  <div className="flex items-center gap-1">
+                    <UserPlus className="w-4 h-4 text-green-500" />
+                    <span className="text-sm">
+                      {userConnectionsCount[mentor.teacher_id] !== undefined
+                        ? userConnectionsCount[mentor.teacher_id]
+                        : "..."}{" "}
+                      connections
+                    </span>
+                  </div>
                 </div>
 
                 <div className="mt-4 flex flex-wrap gap-2">
@@ -313,7 +367,17 @@ const MentorsGrid = () => {
                       </>
                     )}
                   </button>
-                  <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                  <button
+                    onClick={() => handleMessageClick(mentor.teacher_id)}
+                    disabled={!isConnected}
+                    className={`px-4 py-2 border border-gray-300 rounded-lg transition-colors flex items-center justify-center
+                      ${
+                        isConnected
+                          ? "hover:bg-gray-50"
+                          : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      }
+                    `}
+                  >
                     <MessageCircle className="w-4 h-4" />
                   </button>
                 </div>
@@ -333,6 +397,8 @@ const LearnersGrid = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [connections, setConnections] = useState([]);
+  const [userConnectionsCount, setUserConnectionsCount] = useState({});
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchLearners();
@@ -373,6 +439,19 @@ const LearnersGrid = () => {
     if (isPending) return "pending";
 
     return "not_connected";
+  };
+
+  const getTotalConnections = async (userId) => {
+    const response = await axiosInstance.get(
+      `/api/connect/getAllConnections/${userId}`
+    );
+
+    return response.data.filter(
+      (conn) =>
+        conn.status === "accepted" &&
+        (conn.connection_recoverid === userId ||
+          conn.connection_senderid === userId)
+    ).length;
   };
 
   const fetchLearners = async () => {
@@ -425,6 +504,10 @@ const LearnersGrid = () => {
     }
   };
 
+  const handleMessageClick = (userId) => {
+    navigate(`/chat/${userId}`);
+  };
+
   console.log(learners);
   const filteredLearners = React.useMemo(
     () =>
@@ -449,6 +532,32 @@ const LearnersGrid = () => {
       }),
     [learners, searchQuery, selectedInterest]
   );
+
+  // Helper to fetch and cache total connections for a user
+  const fetchUserConnectionsCount = async (userId) => {
+    if (userConnectionsCount[userId] !== undefined) return; // Already fetched
+    try {
+      const response = await axiosInstance.get(
+        `/api/connect/getAllConnections/${userId}`
+      );
+      const count = response.data.filter(
+        (conn) =>
+          conn.status === "accepted" &&
+          (conn.connection_recoverid === userId ||
+            conn.connection_senderid === userId)
+      ).length;
+      setUserConnectionsCount((prev) => ({ ...prev, [userId]: count }));
+    } catch (err) {
+      setUserConnectionsCount((prev) => ({ ...prev, [userId]: 0 }));
+    }
+  };
+
+  useEffect(() => {
+    filteredLearners.forEach((learner) => {
+      if (learner && learner.student_id)
+        fetchUserConnectionsCount(learner.student_id);
+    });
+  }, [filteredLearners]);
 
   if (loading) return <div>Loading learners...</div>;
   if (error) return <div>{error}</div>;
@@ -598,6 +707,15 @@ const LearnersGrid = () => {
                   </div>
 
                   <div className="mt-4 flex gap-2">
+                    <div className="flex items-center gap-1 mr-2">
+                      <UserPlus className="w-4 h-4 text-green-500" />
+                      <span className="text-sm">
+                        {userConnectionsCount[learner.student_id] !== undefined
+                          ? userConnectionsCount[learner.student_id]
+                          : "..."}{" "}
+                        connections
+                      </span>
+                    </div>
                     <button
                       onClick={() => {
                         handleConnect(learner.student_id);
@@ -628,7 +746,17 @@ const LearnersGrid = () => {
                         </>
                       )}
                     </button>
-                    <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                    <button
+                      onClick={() => handleMessageClick(learner.student_id)}
+                      disabled={!isConnected}
+                      className={`px-4 py-2 border border-gray-300 rounded-lg transition-colors flex items-center justify-center
+                        ${
+                          isConnected
+                            ? "hover:bg-gray-50"
+                            : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                        }
+                      `}
+                    >
                       <MessageCircle className="w-4 h-4" />
                     </button>
                   </div>

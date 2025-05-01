@@ -10,10 +10,12 @@ import CreateYourRoadmap from "./components/CreateYourRoadmap";
 import Footer from "./components/Footer";
 import { MentorsGrid, LearnersGrid } from "./components/UsersList";
 import RoadmapPath from "./components/RoadmapAnimation";
-import ChatApp from "./chatComponent/ChatApp";
+// import ChatApp from "./chatComponent/ChatApp";
 import ProtectedRoute from "./authComponent/ProtectedRoute";
 import SkillsManagement from "./components/SkillsManagement";
 import AddSkills from "./authComponent/AddSkills";
+import Chat from "./components/Chat";
+import ChatList from "./components/ChatList";
 
 function App() {
   return (
@@ -43,14 +45,14 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route
+          {/* <Route
             path="/Chatting"
             element={
               <ProtectedRoute>
                 <ChatApp />
               </ProtectedRoute>
             }
-          />
+          /> */}
           <Route
             path="/roadmapAnimation"
             element={
@@ -88,6 +90,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <UserProfile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/chat/:userId"
+            element={
+              <ProtectedRoute>
+                <Chat />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/chat-list"
+            element={
+              <ProtectedRoute>
+                <ChatList />
               </ProtectedRoute>
             }
           />

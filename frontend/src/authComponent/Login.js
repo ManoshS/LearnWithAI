@@ -22,9 +22,11 @@ const Login = () => {
         localStorage.setItem("jwtToken", token);
         localStorage.setItem("userId", response.data.userId); // Adjust according to your login response structure
         console.log("Login successful:", response.data);
+        console.log("reload");
 
         navigate("/");
         window.location.reload();
+        return;
         // Redirect or update UI as needed
       } else {
         setError("Failed to retrieve token");

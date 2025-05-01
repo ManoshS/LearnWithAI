@@ -23,9 +23,11 @@
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.2",
     "langchain": "^0.1.29-rc.0",
-    "mysql2": "^3.11.3",
+    "mysql2": "^3.14.1",
     "openai": "^4.67.3",
-    "socket.io": "^4.8.1"
+    "sequelize": "^6.37.7",
+    "socket.io": "^4.8.1",
+    "socket.io-client": "^4.8.1"
   },
   "devDependencies": {
     "eslint": "^9.12.0",
