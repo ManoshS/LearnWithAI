@@ -11,6 +11,7 @@ import {
   Search,
   Filter,
 } from "lucide-react";
+import { Tag } from "antd";
 import { Link, useNavigate } from "react-router-dom";
 // Mentors Component
 const MentorsGrid = () => {
@@ -24,9 +25,13 @@ const MentorsGrid = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchMentors();
+    if (selectedSkill === "Recommend For Me") {
+      fetchRecommendedMentors();
+    } else {
+      fetchMentors();
+    }
     fetchConnections();
-  }, []);
+  }, [selectedSkill]);
 
   const fetchConnections = async () => {
     try {
@@ -101,6 +106,90 @@ const MentorsGrid = () => {
     } catch (err) {
       console.error("Error fetching mentors:", err);
       setError("Failed to fetch mentors");
+      setLoading(false);
+    }
+  };
+
+  const fetchUserSkills = async (userId) => {
+    try {
+      const response = await axiosInstance.get(
+        `/api/users/getSkillsById/${userId}`
+      );
+      return response.data.map((skill) => skill.skill_id);
+    } catch (error) {
+      console.error("Error fetching user skills:", error);
+      return [];
+    }
+  };
+
+  const fetchRecommendedMentors = async () => {
+    try {
+      setLoading(true);
+      const userId = localStorage.getItem("userId");
+      if (!userId) {
+        setError("User not logged in");
+        setLoading(false);
+        return;
+      }
+
+      // Fetch user skills from API
+      const userSkills = await fetchUserSkills(userId);
+
+      if (userSkills.length === 0) {
+        setError("No skills found for recommendations");
+        setLoading(false);
+        return;
+      }
+
+      const response = await axiosInstance.post(
+        "/api/users/getUserByAnySkill",
+        {
+          skillsList: userSkills,
+        }
+      );
+
+      if (response.data && response.data.length > 0) {
+        // Filter for teachers only
+        const teacherUsers = response.data.filter(
+          (user) => user.user_type === "teacher"
+        );
+
+        // Fetch full user details for each recommended teacher
+        const mentorsList = await Promise.all(
+          teacherUsers.map(async (user) => {
+            try {
+              // Get user details using the user_id from response
+              const userItem = await axiosInstance.get(
+                `/api/users/get/${user.user_id}`
+              );
+              if (userItem.data) {
+                // Add skills to the user data
+                const skillsResponse = await axiosInstance.get(
+                  `/api/users/getSkillsById/${user.user_id}`
+                );
+                return {
+                  ...userItem.data,
+                  skills: skillsResponse.data || [],
+                };
+              }
+              return null;
+            } catch (e) {
+              console.error(`Error fetching user ${user.user_id}:`, e);
+              return null;
+            }
+          })
+        );
+
+        // Filter out any null values
+        const validMentors = mentorsList.filter((mentor) => mentor !== null);
+        setMentors(validMentors);
+      } else {
+        setMentors([]);
+      }
+      setLoading(false);
+    } catch (err) {
+      console.error("Error fetching recommended mentors:", err);
+      // setError("Failed to fetch recommended mentors");
       setLoading(false);
     }
   };
@@ -228,6 +317,7 @@ const MentorsGrid = () => {
         <div className="flex gap-2 overflow-x-auto pb-2">
           {[
             "All",
+            "Recommend For Me",
             "React",
             "Python",
             "Node.js",
@@ -294,7 +384,7 @@ const MentorsGrid = () => {
                     <div className="flex-1">
                       <h3 className="font-semibold text-lg text-gray-900">{`${mentor.first_name} ${mentor.last_name}`}</h3>
                       <p className="text-gray-600 text-sm">
-                        {mentor.expertise || "Teacher"}
+                        {mentor.bio || "Mentor"}
                       </p>
                       <p className="text-gray-500 text-sm flex items-center gap-1">
                         <Briefcase className="w-4 h-4" />
@@ -401,9 +491,13 @@ const LearnersGrid = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchLearners();
+    if (selectedInterest === "Recommend For Me") {
+      fetchRecommendedLearners();
+    } else {
+      fetchLearners();
+    }
     fetchConnections();
-  }, []);
+  }, [selectedInterest]);
 
   const fetchConnections = async () => {
     try {
@@ -484,6 +578,92 @@ const LearnersGrid = () => {
     }
   };
 
+  const fetchUserSkills = async (userId) => {
+    try {
+      const response = await axiosInstance.get(
+        `/api/users/getSkillsById/${userId}`
+      );
+      return response.data.map((skill) => skill.skill_id);
+    } catch (error) {
+      console.error("Error fetching user skills:", error);
+      return [];
+    }
+  };
+
+  const fetchRecommendedLearners = async () => {
+    try {
+      setLoading(true);
+      const userId = localStorage.getItem("userId");
+      if (!userId) {
+        setError("User not logged in");
+        setLoading(false);
+        return;
+      }
+
+      // Fetch user skills from API
+      const userSkills = await fetchUserSkills(userId);
+
+      if (userSkills.length === 0) {
+        setError("No skills found for recommendations");
+        setLoading(false);
+        return;
+      }
+
+      const response = await axiosInstance.post(
+        "/api/users/getUserByAnySkill",
+        {
+          skillsList: userSkills,
+        }
+      );
+
+      if (response.data && response.data.length > 0) {
+        // Filter for students only
+        const studentUsers = response.data.filter(
+          (user) => user.user_type === "student"
+        );
+
+        // Fetch full user details for each recommended student
+        const learnersList = await Promise.all(
+          studentUsers.map(async (user) => {
+            try {
+              // Get user details using the user_id from response
+              const userItem = await axiosInstance.get(
+                `/api/users/get/${user.user_id}`
+              );
+              if (userItem.data) {
+                // Add skills to the user data
+                const skillsResponse = await axiosInstance.get(
+                  `/api/users/getSkillsById/${user.user_id}`
+                );
+                return {
+                  ...userItem.data,
+                  skills: skillsResponse.data || [],
+                };
+              }
+              return null;
+            } catch (e) {
+              console.error(`Error fetching user ${user.user_id}:`, e);
+              return null;
+            }
+          })
+        );
+
+        // Filter out any null values
+        const validLearners = learnersList.filter(
+          (learner) => learner !== null
+        );
+        setLearners(validLearners);
+      } else {
+        setLearners([]);
+      }
+      setLoading(false);
+    } catch (err) {
+      console.error("Error fetching recommended learners:", err);
+      setError("Failed to fetch recommended learners");
+      setLoading(false);
+    }
+  };
+
   const handleConnect = async (userId) => {
     try {
       await axiosInstance.post("/api/connect/addConnection", {
@@ -512,6 +692,7 @@ const LearnersGrid = () => {
   const filteredLearners = React.useMemo(
     () =>
       learners?.filter((learner) => {
+        console.log(learner);
         if (!learner) return false;
 
         const matchesSearch =
@@ -527,8 +708,8 @@ const LearnersGrid = () => {
           (selectedInterest === "All" ||
             learner.interests?.includes(selectedInterest)) ??
           false;
-
-        return matchesSearch && matchesInterest;
+        console.log(matchesSearch, matchesInterest);
+        return matchesSearch || matchesInterest;
       }),
     [learners, searchQuery, selectedInterest]
   );
@@ -553,6 +734,7 @@ const LearnersGrid = () => {
   };
 
   useEffect(() => {
+    console.log(filteredLearners);
     filteredLearners.forEach((learner) => {
       if (learner && learner.student_id)
         fetchUserConnectionsCount(learner.student_id);
@@ -609,6 +791,7 @@ const LearnersGrid = () => {
         <div className="flex gap-2 overflow-x-auto pb-2">
           {[
             "All",
+            "Recommend For Me",
             "Web Development",
             "Mobile Apps",
             "Data Science",
@@ -678,7 +861,8 @@ const LearnersGrid = () => {
                         <h3 className="font-semibold text-lg text-gray-900">{`${learner.first_name} ${learner.last_name}`}</h3>
                         <p className="text-gray-600 text-sm flex items-center gap-1">
                           <GraduationCap className="w-4 h-4" />
-                          {learner.level || "Beginner"} Level
+
+                          {learner.grade_level || "Beginner"}
                         </p>
                         <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
                           <div
@@ -760,6 +944,13 @@ const LearnersGrid = () => {
                       <MessageCircle className="w-4 h-4" />
                     </button>
                   </div>
+                  {learner.skills && (
+                    <div style={{ padding: "10px" }}>
+                      {learner.skills.map((skill) => (
+                        <Tag color="green">{skill.skill_name}</Tag>
+                      ))}
+                    </div>
+                  )}
                 </motion.div>
               );
           })}
