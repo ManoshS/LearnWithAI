@@ -659,7 +659,7 @@ const LearnersGrid = () => {
       setLoading(false);
     } catch (err) {
       console.error("Error fetching recommended learners:", err);
-      setError("Failed to fetch recommended learners");
+
       setLoading(false);
     }
   };
