@@ -1,12 +1,16 @@
 import React, { useState } from "react";
 import axiosInstance from "./axiosConnection";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { LogIn, Eye, EyeOff, Mail, Lock } from "lucide-react";
+
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
@@ -15,19 +19,13 @@ const Login = () => {
         password,
       });
 
-      // Assuming the token is in `response.data.token`
       const token = response.data.token;
       if (token) {
-        // Store the JWT token in local storage
         localStorage.setItem("jwtToken", token);
-        localStorage.setItem("userId", response.data.userId); // Adjust according to your login response structure
-        console.log("Login successful:", response.data);
-        console.log("reload");
-
+        localStorage.setItem("userId", response.data.userId);
         navigate("/");
         window.location.reload();
         return;
-        // Redirect or update UI as needed
       } else {
         setError("Failed to retrieve token");
       }
@@ -37,87 +35,123 @@ const Login = () => {
   };
 
   return (
-    <div
-      className="flex items-center justify-center min-h-screen bg-gray-100"
-      style={{
-        backgroundImage: `
-              radial-gradient(circle at 20px 20px, #8b4513 2px, transparent 0),
-              radial-gradient(circle at 60px 60px, #8b4513 2px, transparent 0),
-              radial-gradient(circle at 100px 40px, #8b4513 2px, transparent 0)
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+      {/* Animated background pattern */}
+      <div
+        className="absolute inset-0 opacity-10"
+        style={{ marginTop: "68px" }}
+      >
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `
+              radial-gradient(circle at 20px 20px, #60A5FA 2px, transparent 0),
+              radial-gradient(circle at 60px 60px, #60A5FA 2px, transparent 0),
+              radial-gradient(circle at 100px 40px, #60A5FA 2px, transparent 0)
             `,
-        backgroundSize: "100px 100px",
-      }}
-    >
-      <div className="w-full max-w-md p-8 space-y-4 bg-white shadow-md rounded-lg">
-        <h2 className="text-2xl font-bold text-center">Login</h2>
-        {error && <p className="text-red-500 text-sm">{error}</p>}
-        <form onSubmit={handleLogin} className="space-y-4">
-          <input
-            type="email"
-            className="w-full px-3 py-2 border rounded-md"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <div className="relative">
-            <input
-              type={showPassword ? "text" : "password"}
-              className="w-full px-3 py-2 border rounded-md"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-            <button
-              type="button"
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
-              onClick={() => setShowPassword(!showPassword)}
-            >
-              {showPassword ? (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                  <path
-                    fillRule="evenodd"
-                    d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              ) : (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z"
-                    clipRule="evenodd"
-                  />
-                  <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z" />
-                </svg>
-              )}
-            </button>
-          </div>
-          <button
-            type="submit"
-            className="w-full py-2 text-white bg-blue-500 rounded-md hover:bg-blue-600"
+            backgroundSize: "100px 100px",
+          }}
+        />
+      </div>
+
+      <div className="relative min-h-screen flex items-center justify-center px-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="w-full max-w-md"
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="bg-gray-800/50 backdrop-blur-lg rounded-xl p-8 shadow-xl border border-gray-700"
           >
-            Login
-          </button>
-        </form>
-        <p className="text-sm text-center text-gray-600">
-          Don't have an account?{" "}
-          <a href="/register" className="text-blue-500 hover:underline">
-            Register
-          </a>
-        </p>
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+                Welcome Back
+              </h2>
+              <p className="text-gray-400 mt-2">
+                Sign in to continue your learning journey
+              </p>
+            </div>
+
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm"
+              >
+                {error}
+              </motion.div>
+            )}
+
+            <form onSubmit={handleLogin} className="space-y-6">
+              <div className="space-y-4">
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Mail className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="email"
+                    className="w-full pl-10 pr-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Lock className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    className="w-full pl-10 pr-12 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-300"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-5 w-5" />
+                    ) : (
+                      <Eye className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                type="submit"
+                className="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white py-3 px-6 rounded-lg font-medium hover:from-blue-600 hover:to-purple-600 transition-all duration-200 flex items-center justify-center gap-2"
+              >
+                <LogIn className="w-5 h-5" />
+                Sign In
+              </motion.button>
+            </form>
+
+            <p className="mt-6 text-center text-sm text-gray-400">
+              Don't have an account?{" "}
+              <motion.a
+                href="/register"
+                className="text-blue-400 hover:text-blue-300 font-medium"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Create Account
+              </motion.a>
+            </p>
+          </motion.div>
+        </motion.div>
       </div>
     </div>
   );

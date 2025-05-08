@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import axiosInstance from "./axiosConnection";
 import { Select, InputNumber, Form, Space, Button, message, Tag } from "antd";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Brain, Plus, CheckCircle2 } from "lucide-react";
 
 const AddSkills = () => {
   const [availableSkills, setAvailableSkills] = useState([]);
@@ -15,27 +17,23 @@ const AddSkills = () => {
       try {
         const userId = localStorage.getItem("userId");
         const token = localStorage.getItem("jwtToken");
-        console.log(userId, token);
         if (!userId || !token) {
           setError("User ID or token not found. Please login again.");
           return;
         }
 
-        // Set the token in the axios instance
         axiosInstance.defaults.headers.common[
           "Authorization"
         ] = `Bearer ${token}`;
 
-        // Fetch available skills first
         const skillsResponse = await axiosInstance.get("/api/users/showSkills");
         let skillOptions = skillsResponse.data.map((skill) => ({
           value: skill.skill_id,
           label: skill.skill_name,
-          disabled: false, // will update after fetching user skills
+          disabled: false,
         }));
         setAvailableSkills(skillOptions);
 
-        // Then fetch user's existing skills
         const userSkillsResponse = await axiosInstance.get(
           `/api/users/getSkillsById/${userId}`
         );
@@ -46,7 +44,6 @@ const AddSkills = () => {
         }));
         setExistingSkills(userSkills);
 
-        // Update available skills to disable existing ones
         skillOptions = skillOptions.map((option) => ({
           ...option,
           disabled: userSkills.some(
@@ -70,11 +67,9 @@ const AddSkills = () => {
         return;
       }
 
-      // Get the selected skills with their proficiency levels
       const selectedSkills = values.skills;
       const proficiencyLevels = {};
 
-      // Extract proficiency levels for each skill
       Object.keys(values).forEach((key) => {
         if (key.startsWith("proficiency_")) {
           const skillId = parseInt(key.split("_")[1]);
@@ -82,7 +77,6 @@ const AddSkills = () => {
         }
       });
 
-      // Add each skill one by one
       for (const skillId of selectedSkills) {
         try {
           await axiosInstance.post("/api/users/addSkills", {
@@ -101,32 +95,6 @@ const AddSkills = () => {
       }
 
       message.success("Skills added successfully!");
-
-      // Refresh the skills list after adding new skills
-      //   const userSkillsResponse = await axiosInstance.get(
-      //     `/api/users/getSkillsById/${userId}`
-      //   );
-      //   const updatedUserSkills = userSkillsResponse.data.map((skill) => ({
-      //     skill_id: skill.skill_id,
-      //     skill_name: skill.skill_name,
-      //     proficiency_level: skill.proficiency_level,
-      //   }));
-      //   setExistingSkills(updatedUserSkills);
-
-      //   // Update available skills to reflect new disabled options
-      //   setAvailableSkills((prev) =>
-      //     prev.map((skill) => ({
-      //       ...skill,
-      //       disabled: updatedUserSkills.some(
-      //         (userSkill) => userSkill.skill_id === skill.value
-      //       ),
-      //     }))
-      //   );
-
-      //   // Clear the form
-      //   form.resetFields();
-
-      // Redirect to home page
       navigate("/");
     } catch (err) {
       console.error("Error adding skills:", err);
@@ -136,47 +104,94 @@ const AddSkills = () => {
   };
 
   return (
-    <div
-      className="flex items-center justify-center min-h-screen bg-gray-100"
-      style={{
-        backgroundImage: `
-              radial-gradient(circle at 20px 20px, #8b4513 2px, transparent 0),
-              radial-gradient(circle at 60px 60px, #8b4513 2px, transparent 0),
-              radial-gradient(circle at 100px 40px, #8b4513 2px, transparent 0)
-            `,
-        backgroundSize: "100px 100px",
-      }}
-    >
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+      {/* Animated background pattern */}
       <div
-        className="flex items-center justify-center min-h-screen bg-gray-100"
-        style={{
-          minWidth: "450px",
-        }}
+        className="absolute inset-0 opacity-10"
+        style={{ marginTop: "68px" }}
       >
-        <div className="w-full max-w-md p-8 space-y-4 bg-white shadow-xl rounded-lg">
-          <h2 className="text-2xl font-bold text-center">Add Your Skills</h2>
-          {error && <p className="text-red-500 text-sm">{error}</p>}
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `
+              radial-gradient(circle at 20px 20px, #60A5FA 2px, transparent 0),
+              radial-gradient(circle at 60px 60px, #60A5FA 2px, transparent 0),
+              radial-gradient(circle at 100px 40px, #60A5FA 2px, transparent 0)
+            `,
+            backgroundSize: "100px 100px",
+          }}
+        />
+      </div>
 
-          {/* Display existing skills */}
+      <div className=" max-w-2xl mx-auto px-4 py-12">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="bg-gray-800/50 backdrop-blur-lg rounded-xl p-8 shadow-xl border border-gray-700"
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="text-center mb-8"
+          >
+            <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+              Add Your Skills
+            </h2>
+            <p className="text-gray-400 mt-2">
+              Select your skills and set your proficiency level
+            </p>
+          </motion.div>
+
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm"
+            >
+              {error}
+            </motion.div>
+          )}
+
           {existingSkills.length > 0 && (
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold mb-2">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="mb-6"
+            >
+              <h3 className="text-lg font-semibold text-gray-300 mb-3 flex items-center">
+                <CheckCircle2 className="w-5 h-5 mr-2 text-green-400" />
                 Your Current Skills:
               </h3>
               <div className="flex flex-wrap gap-2">
                 {existingSkills.map((skill) => (
-                  <Tag key={skill.skill_id} color="blue">
+                  <Tag
+                    key={skill.skill_id}
+                    className="px-3 py-1 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-full"
+                  >
                     {skill.skill_name}
                   </Tag>
                 ))}
               </div>
-            </div>
+            </motion.div>
           )}
 
-          <Form form={form} onFinish={handleSkillsSubmit} layout="vertical">
+          <Form
+            form={form}
+            onFinish={handleSkillsSubmit}
+            layout="vertical"
+            className="space-y-6"
+          >
             <Form.Item
               name="skills"
-              label="Select new skills"
+              label={
+                <span className="text-gray-300 flex items-center">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Select new skills
+                </span>
+              }
               rules={[
                 { required: true, message: "Please select at least one skill" },
               ]}
@@ -192,6 +207,7 @@ const AddSkills = () => {
                     .toLowerCase()
                     .includes(input.toLowerCase())
                 }
+                className="custom-select"
                 onChange={(selectedSkills) => {
                   const currentValues = form.getFieldsValue();
                   const newValues = { ...currentValues };
@@ -226,7 +242,11 @@ const AddSkills = () => {
                     <Form.Item
                       key={skillId}
                       name={`proficiency_${skillId}`}
-                      label={`Proficiency level for ${skill?.label}`}
+                      label={
+                        <span className="text-gray-300">
+                          Proficiency level for {skill?.label}
+                        </span>
+                      }
                       rules={[
                         {
                           required: true,
@@ -239,6 +259,7 @@ const AddSkills = () => {
                         max={10}
                         style={{ width: "100%" }}
                         placeholder="Enter proficiency level (1-10)"
+                        className="custom-input"
                       />
                     </Form.Item>
                   );
@@ -247,17 +268,49 @@ const AddSkills = () => {
             </Form.Item>
 
             <Form.Item>
-              <Button
-                type="primary"
-                htmlType="submit"
-                className="w-full bg-blue-500 hover:bg-blue-600 text-white"
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                type="submit"
+                className="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white py-3 px-6 rounded-lg font-medium hover:from-blue-600 hover:to-purple-600 transition-all duration-200 flex items-center justify-center gap-2"
               >
+                <Brain className="w-5 h-5" />
                 Save Skills
-              </Button>
+              </motion.button>
             </Form.Item>
           </Form>
-        </div>
+        </motion.div>
       </div>
+
+      <style jsx global>{`
+        .custom-select .ant-select-selector {
+          background-color: rgba(31, 41, 55, 0.5) !important;
+          border-color: rgba(75, 85, 99, 1) !important;
+          color: white !important;
+        }
+        .custom-select .ant-select-selection-item {
+          background-color: rgba(59, 130, 246, 0.2) !important;
+          border-color: rgba(59, 130, 246, 0.3) !important;
+          color: rgb(96, 165, 250) !important;
+        }
+        .custom-input .ant-input-number-input {
+          background-color: rgba(31, 41, 55, 0.5) !important;
+          border-color: rgba(75, 85, 99, 1) !important;
+          color: white !important;
+        }
+        .ant-select-dropdown {
+          background-color: rgb(31, 41, 55) !important;
+        }
+        .ant-select-item {
+          color: white !important;
+        }
+        .ant-select-item-option-selected {
+          background-color: rgba(59, 130, 246, 0.2) !important;
+        }
+        .ant-select-item-option-active {
+          background-color: rgba(59, 130, 246, 0.1) !important;
+        }
+      `}</style>
     </div>
   );
 };

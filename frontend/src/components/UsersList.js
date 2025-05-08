@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import axiosInstance from "../authComponent/axiosConnection";
 import {
   UserPlus,
@@ -10,6 +10,13 @@ import {
   GraduationCap,
   Search,
   Filter,
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  MessageSquare,
+  X,
+  Loader2,
 } from "lucide-react";
 import { Tag } from "antd";
 import { Link, useNavigate } from "react-router-dom";
@@ -22,7 +29,16 @@ const MentorsGrid = () => {
   const [error, setError] = useState(null);
   const [connections, setConnections] = useState([]);
   const [userConnectionsCount, setUserConnectionsCount] = useState({});
+  const [showFilters, setShowFilters] = useState(false);
   const navigate = useNavigate();
+
+  const filters = [
+    { id: "All", label: "All Users" },
+    { id: "Recommend For Me", label: "Recommend For Me" },
+    { id: "online", label: "Online" },
+    { id: "offline", label: "Offline" },
+    { id: "favorites", label: "Favorites" },
+  ];
 
   useEffect(() => {
     if (selectedSkill === "Recommend For Me") {
@@ -158,7 +174,6 @@ const MentorsGrid = () => {
         const mentorsList = await Promise.all(
           teacherUsers.map(async (user) => {
             try {
-              // Get user details using the user_id from response
               const userItem = await axiosInstance.get(
                 `/api/users/get/${user.user_id}`
               );
@@ -223,18 +238,17 @@ const MentorsGrid = () => {
       mentors?.filter((mentor) => {
         if (!mentor) return false;
 
+        const fullName = `${mentor.first_name || ""} ${
+          mentor.last_name || ""
+        }`.toLowerCase();
         const matchesSearch =
-          (mentor.first_name
-            ?.toLowerCase()
-            .includes(searchQuery.toLowerCase()) ||
-            mentor.last_name
-              ?.toLowerCase()
-              .includes(searchQuery.toLowerCase())) ??
-          false;
+          searchQuery === "" || fullName.includes(searchQuery.toLowerCase());
 
+        // If "Recommend For Me" is selected, show all recommended mentors
         const matchesSkill =
-          (selectedSkill === "All" || mentor.skills?.includes(selectedSkill)) ??
-          false;
+          selectedSkill === "All" ||
+          selectedSkill === "Recommend For Me" ||
+          mentor.skills?.includes(selectedSkill);
 
         return matchesSearch && matchesSkill;
       }),
@@ -267,214 +281,278 @@ const MentorsGrid = () => {
     });
   }, [filteredMentors]);
 
-  if (loading) return <div>Loading mentors...</div>;
-  if (error) return <div>{error}</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur opacity-30 animate-pulse" />
+          <motion.div
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{
+              duration: 0.5,
+              repeat: Infinity,
+              repeatType: "reverse",
+            }}
+            className="relative w-16 h-16 rounded-full bg-gray-800/50 backdrop-blur-lg border border-gray-700 flex items-center justify-center"
+          >
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            >
+              <Loader2 className="w-8 h-8 text-blue-500" />
+            </motion.div>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative"
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-red-600 rounded-lg blur opacity-30" />
+          <div className="relative bg-gray-800/50 backdrop-blur-lg rounded-lg border border-red-500/20 p-6 text-center">
+            <h3 className="text-red-400 text-lg font-medium mb-2">Error</h3>
+            <p className="text-gray-400">{error}</p>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
-    <div
-      className="p-6 bg-gray-50"
-      style={{
-        backgroundImage: `
-          radial-gradient(circle at 20px 20px, #fffff1 2px, transparent 0),
-          radial-gradient(circle at 60px 60px, #000000 2px, transparent 0),
-          radial-gradient(circle at 100px 40px, #8b4513 2px, transparent 0)
-        `,
-        backgroundSize: "100px 100px",
-      }}
-    >
-      {/* Header Section */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-8"
-      >
-        <h2 className="text-3xl font-bold text-gray-900">Expert Mentors</h2>
-        <p className="text-gray-600 mt-2">
-          Connect with industry professionals to guide your learning journey
-        </p>
-      </motion.div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+      {/* Animated background pattern */}
+      <div className=" inset-0 opacity-10">
+        <div
+          className=" inset-0"
+          style={{
+            backgroundImage: `
+              radial-gradient(circle at 20px 20px, #60A5FA 2px, transparent 0),
+              radial-gradient(circle at 60px 60px, #60A5FA 2px, transparent 0),
+              radial-gradient(circle at 100px 40px, #60A5FA 2px, transparent 0)
+            `,
+            backgroundSize: "100px 100px",
+          }}
+        />
+      </div>
 
-      {/* Search and Filter Section */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2 }}
-        className="mb-6 flex flex-col sm:flex-row gap-4"
-      >
-        {/* Search Bar */}
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search mentors..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-        </div>
+      <div className=" max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-8"
+        >
+          <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+            Users Directory
+          </h1>
+          <p className="text-gray-400">
+            Connect with other learners and mentors
+          </p>
+        </motion.div>
 
-        {/* Skills Filter */}
-        <div className="flex gap-2 overflow-x-auto pb-2">
-          {[
-            "All",
-            "Recommend For Me",
-            "React",
-            "Python",
-            "Node.js",
-            "Machine Learning",
-            "DevOps",
-          ].map((skill) => (
-            <button
-              key={skill}
-              onClick={() => setSelectedSkill(skill)}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
-                selectedSkill === skill
-                  ? "bg-blue-500 text-white"
-                  : "bg-white text-gray-700 hover:bg-gray-100"
-              } transition-colors duration-200`}
-            >
-              {skill}
-            </button>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* Mentors Grid */}
-      <motion.div
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-        variants={{
-          hidden: { opacity: 0 },
-          show: {
-            opacity: 1,
-            transition: {
-              staggerChildren: 0.1,
-            },
-          },
-        }}
-        initial="hidden"
-        animate="show"
-      >
-        {filteredMentors.map((mentor) => {
-          const connectionStatus = getConnectionStatus(mentor.teacher_id);
-          const isConnected = connectionStatus === "connected";
-          const isPending = connectionStatus === "pending";
-          if (mentor.teacher_id != localStorage.getItem("userId"))
-            return (
-              <motion.div
-                key={mentor.teacher_id}
-                variants={{
-                  hidden: { opacity: 0, y: 20 },
-                  show: { opacity: 1, y: 0 },
+        {/* Search and Filter Bar */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="mb-8"
+        >
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="relative flex-1">
+              <div
+                className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+                style={{
+                  zIndex: 10000,
                 }}
-                whileHover={{ y: -5 }}
-                className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6"
               >
-                <Link to={`/${mentor.teacher_id}`}>
-                  <div className="flex gap-4">
-                    <img
-                      src={
-                        mentor.profile_image ||
-                        `https://ui-avatars.com/api/?name=${
-                          mentor.first_name + " " + mentor.last_name
-                        }&background=random`
-                      }
-                      alt={`${mentor.first_name} ${mentor.last_name}`}
-                      className="w-13 h-13 rounded-full object-cover"
-                    />
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-lg text-gray-900">{`${mentor.first_name} ${mentor.last_name}`}</h3>
-                      <p className="text-gray-600 text-sm">
-                        {mentor.bio || "Mentor"}
-                      </p>
-                      <p className="text-gray-500 text-sm flex items-center gap-1">
-                        <Briefcase className="w-4 h-4" />
-                        {mentor.organization || "Educational Institution"}
-                      </p>
-                    </div>
-                  </div>
-                </Link>
-                <div className="mt-4 flex items-center gap-4">
-                  <div className="flex items-center gap-1">
-                    <Star className="w-4 h-4 text-yellow-400" />
-                    <span className="text-sm font-medium">
-                      {mentor.rating || "4.5"}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Users className="w-4 h-4 text-blue-500" />
-                    <span className="text-sm">
-                      {mentor.students_count || "0"} students
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <UserPlus className="w-4 h-4 text-green-500" />
-                    <span className="text-sm">
-                      {userConnectionsCount[mentor.teacher_id] !== undefined
-                        ? userConnectionsCount[mentor.teacher_id]
-                        : "..."}{" "}
-                      connections
-                    </span>
-                  </div>
-                </div>
+                <Search className="w-5 h-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search users..."
+                className="w-full pl-10 pr-4 py-2 bg-gray-800/50 backdrop-blur-lg border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowFilters(!showFilters)}
+              className="px-4 py-2 bg-gray-800/50 backdrop-blur-lg border border-gray-700 rounded-lg text-white flex items-center gap-2"
+            >
+              <Filter className="w-5 h-5" />
+              <span>Filters</span>
+            </motion.button>
+          </div>
 
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {mentor.skills?.map((skill) => (
-                    <span
-                      key={skill}
-                      className="px-2 py-1 bg-blue-50 text-blue-600 text-xs rounded-full"
-                    >
-                      {skill}
-                    </span>
-                  ))}
-                </div>
-
-                <div className="mt-4 flex gap-2">
-                  <button
-                    onClick={() => handleConnect(mentor.teacher_id)}
-                    disabled={isConnected || isPending}
-                    className={`flex-1 py-2 rounded-lg transition-colors flex items-center justify-center gap-2 ${
-                      isConnected
-                        ? "bg-gray-500 text-white cursor-not-allowed"
-                        : isPending
-                        ? "bg-yellow-500 text-white cursor-not-allowed"
-                        : "bg-blue-500 text-white hover:bg-blue-600"
+          {/* Filter Options */}
+          <AnimatePresence>
+            {showFilters && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mt-4 flex flex-wrap gap-2"
+              >
+                {filters.map((filter) => (
+                  <motion.button
+                    key={filter.id}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setSelectedSkill(filter.id)}
+                    className={`px-4 py-2 rounded-lg text-sm ${
+                      selectedSkill === filter.id
+                        ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white"
+                        : "bg-gray-800/50 backdrop-blur-lg border border-gray-700 text-gray-400"
                     }`}
                   >
-                    {isConnected ? (
-                      <>
-                        <UserPlus className="w-4 h-4" />
-                        Connected
-                      </>
-                    ) : isPending ? (
-                      <>
-                        <UserPlus className="w-4 h-4" />
-                        Pending
-                      </>
-                    ) : (
-                      <>
-                        <UserPlus className="w-4 h-4" />
-                        Connect
-                      </>
-                    )}
-                  </button>
-                  <button
-                    onClick={() => handleMessageClick(mentor.teacher_id)}
-                    disabled={!isConnected}
-                    className={`px-4 py-2 border border-gray-300 rounded-lg transition-colors flex items-center justify-center
-                      ${
-                        isConnected
-                          ? "hover:bg-gray-50"
-                          : "bg-gray-200 text-gray-400 cursor-not-allowed"
-                      }
-                    `}
-                  >
-                    <MessageCircle className="w-4 h-4" />
-                  </button>
-                </div>
+                    {filter.label}
+                  </motion.button>
+                ))}
               </motion.div>
-            );
-        })}
-      </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+
+        {/* Mentors Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <AnimatePresence>
+            {filteredMentors.map((mentor, index) => {
+              const connectionStatus = getConnectionStatus(mentor.teacher_id);
+              const isConnected = connectionStatus === "connected";
+              const isPending = connectionStatus === "pending";
+              if (mentor.teacher_id != localStorage.getItem("userId"))
+                return (
+                  <motion.div
+                    key={mentor.teacher_id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3, delay: index * 0.1 }}
+                    className="group relative w-full"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg blur opacity-30 group-hover:opacity-50 transition duration-200" />
+                    <div className="relative bg-gray-800/50 backdrop-blur-lg rounded-lg border border-gray-700 hover:border-blue-500/50 transition-colors p-6 h-full">
+                      <div
+                        className="flex items-start justify-between mb-4 cursor-pointer"
+                        onClick={() => navigate(`/${mentor.teacher_id}`)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 p-0.5">
+                            <div className="w-full h-full rounded-full bg-gray-800 flex items-center justify-center">
+                              <img
+                                src={
+                                  mentor.profile_image ||
+                                  `https://ui-avatars.com/api/?name=${
+                                    mentor.first_name + " " + mentor.last_name
+                                  }&background=random`
+                                }
+                                alt={`${mentor.first_name} ${mentor.last_name}`}
+                                className="w-6 h-6 rounded-full object-cover"
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <h3 className="text-white font-semibold">{`${mentor.first_name} ${mentor.last_name}`}</h3>
+                            <p className="text-sm text-gray-400">
+                              {mentor.bio || "Mentor"}
+                            </p>
+                          </div>
+                        </div>
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          className="text-gray-400 hover:text-yellow-400"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // Add favorite functionality here
+                          }}
+                        >
+                          <Star
+                            className={`w-5 h-5 ${
+                              mentor.isFavorite ? "fill-yellow-400" : ""
+                            }`}
+                          />
+                        </motion.button>
+                      </div>
+
+                      <div className="space-y-2 mb-4">
+                        <div className="flex items-center gap-2 text-gray-400">
+                          <Briefcase className="w-4 h-4" />
+                          <span className="text-sm">
+                            {mentor.organization || "Educational Institution"}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-gray-400">
+                          <Users className="w-4 h-4" />
+                          <span className="text-sm">
+                            {userConnectionsCount[mentor.teacher_id] !==
+                            undefined
+                              ? userConnectionsCount[mentor.teacher_id]
+                              : "..."}{" "}
+                            connections
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <span
+                          className={`text-sm ${
+                            isConnected ? "text-green-400" : "text-gray-400"
+                          }`}
+                        >
+                          {isConnected ? "Connected" : "Not Connected"}
+                        </span>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleConnect(mentor.teacher_id)}
+                            disabled={isConnected || isPending}
+                            className={`flex-1 px-3 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg flex items-center justify-center gap-1 text-sm ${
+                              isConnected || isPending
+                                ? "cursor-not-allowed opacity-75"
+                                : "hover:bg-blue-600"
+                            }`}
+                          >
+                            <UserPlus className="w-4 h-4" />
+                            {isConnected
+                              ? "Connected"
+                              : isPending
+                              ? "Pending"
+                              : "Connect"}
+                          </button>
+                          <button
+                            onClick={() =>
+                              handleMessageClick(mentor.teacher_id)
+                            }
+                            disabled={!isConnected}
+                            className={`flex-1 px-3 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg flex items-center justify-center gap-1 text-sm ${
+                              isConnected
+                                ? "hover:bg-blue-600"
+                                : "cursor-not-allowed opacity-75"
+                            }`}
+                          >
+                            <MessageCircle className="w-4 h-4" />
+                            Message
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+            })}
+          </AnimatePresence>
+        </div>
+      </div>
     </div>
   );
 };
@@ -488,7 +566,16 @@ const LearnersGrid = () => {
   const [error, setError] = useState(null);
   const [connections, setConnections] = useState([]);
   const [userConnectionsCount, setUserConnectionsCount] = useState({});
+  const [showFilters, setShowFilters] = useState(false);
   const navigate = useNavigate();
+
+  const filters = [
+    { id: "All", label: "All Users" },
+    { id: "Recommend For Me", label: "Recommend For Me" },
+    { id: "online", label: "Online" },
+    { id: "offline", label: "Offline" },
+    { id: "favorites", label: "Favorites" },
+  ];
 
   useEffect(() => {
     if (selectedInterest === "Recommend For Me") {
@@ -626,7 +713,6 @@ const LearnersGrid = () => {
         const learnersList = await Promise.all(
           studentUsers.map(async (user) => {
             try {
-              // Get user details using the user_id from response
               const userItem = await axiosInstance.get(
                 `/api/users/get/${user.user_id}`
               );
@@ -659,7 +745,7 @@ const LearnersGrid = () => {
       setLoading(false);
     } catch (err) {
       console.error("Error fetching recommended learners:", err);
-
+      // setError("Failed to fetch recommended learners");
       setLoading(false);
     }
   };
@@ -692,24 +778,21 @@ const LearnersGrid = () => {
   const filteredLearners = React.useMemo(
     () =>
       learners?.filter((learner) => {
-        console.log(learner);
         if (!learner) return false;
 
+        const fullName = `${learner.first_name || ""} ${
+          learner.last_name || ""
+        }`.toLowerCase();
         const matchesSearch =
-          (learner.first_name
-            ?.toLowerCase()
-            .includes(searchQuery.toLowerCase()) ||
-            learner.last_name
-              ?.toLowerCase()
-              .includes(searchQuery.toLowerCase())) ??
-          false;
+          searchQuery === "" || fullName.includes(searchQuery.toLowerCase());
 
+        // If "Recommend For Me" is selected, show all recommended learners
         const matchesInterest =
-          (selectedInterest === "All" ||
-            learner.interests?.includes(selectedInterest)) ??
-          false;
-        console.log(matchesSearch, matchesInterest);
-        return matchesSearch || matchesInterest;
+          selectedInterest === "All" ||
+          selectedInterest === "Recommend For Me" ||
+          learner.interests?.includes(selectedInterest);
+
+        return matchesSearch && matchesInterest;
       }),
     [learners, searchQuery, selectedInterest]
   );
@@ -741,220 +824,287 @@ const LearnersGrid = () => {
     });
   }, [filteredLearners]);
 
-  if (loading) return <div>Loading learners...</div>;
-  if (error) return <div>{error}</div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur opacity-30 animate-pulse" />
+          <motion.div
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{
+              duration: 0.5,
+              repeat: Infinity,
+              repeatType: "reverse",
+            }}
+            className="relative w-16 h-16 rounded-full bg-gray-800/50 backdrop-blur-lg border border-gray-700 flex items-center justify-center"
+          >
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            >
+              <Loader2 className="w-8 h-8 text-blue-500" />
+            </motion.div>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative"
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-red-600 rounded-lg blur opacity-30" />
+          <div className="relative bg-gray-800/50 backdrop-blur-lg rounded-lg border border-red-500/20 p-6 text-center">
+            <h3 className="text-red-400 text-lg font-medium mb-2">Error</h3>
+            <p className="text-gray-400">{error}</p>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
-    <div
-      className="p-6 bg-gray-50"
-      style={{
-        backgroundImage: `
-          radial-gradient(circle at 20px 20px, #fffff1 2px, transparent 0),
-          radial-gradient(circle at 60px 60px, #000000 2px, transparent 0),
-          radial-gradient(circle at 100px 40px, #8b4513 2px, transparent 0)
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+      {/* Animated background pattern */}
+      <div className=" inset-0 opacity-10">
+        <div
+          className=" inset-0"
+          style={{
+            backgroundImage: `
+              radial-gradient(circle at 20px 20px, #60A5FA 2px, transparent 0),
+              radial-gradient(circle at 60px 60px, #60A5FA 2px, transparent 0),
+              radial-gradient(circle at 100px 40px, #60A5FA 2px, transparent 0)
+            `,
+          }}
+        />
+      </div>
+
+      <div
+        className=" max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12"
+        style={{
+          backgroundImage: `
+          radial-gradient(circle at 20px 20px, #60A5FA 2px, transparent 0),
+          radial-gradient(circle at 60px 60px, #60A5FA 2px, transparent 0),
+          radial-gradient(circle at 100px 40px, #60A5FA 2px, transparent 0)
         `,
-        backgroundSize: "100px 100px",
-      }}
-    >
-      {/* Header Section */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-8"
-      >
-        <h2 className="text-3xl font-bold text-gray-900">Active Learners</h2>
-        <p className="text-gray-600 mt-2">
-          Connect with fellow learners and grow together
-        </p>
-      </motion.div>
-
-      {/* Search and Filter Section */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2 }}
-        className="mb-6 flex flex-col sm:flex-row gap-4"
-      >
-        {/* Search Bar */}
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search learners..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-        </div>
-
-        {/* Interests Filter */}
-        <div className="flex gap-2 overflow-x-auto pb-2">
-          {[
-            "All",
-            "Recommend For Me",
-            "Web Development",
-            "Mobile Apps",
-            "Data Science",
-            "UI/UX",
-            "DevOps",
-          ].map((interest) => (
-            <button
-              key={interest}
-              onClick={() => setSelectedInterest(interest)}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
-                selectedInterest === interest
-                  ? "bg-green-500 text-white"
-                  : "bg-white text-gray-700 hover:bg-gray-100"
-              } transition-colors duration-200`}
-            >
-              {interest}
-            </button>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* Learners Grid */}
-      <motion.div
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-        variants={{
-          hidden: { opacity: 0 },
-          show: {
-            opacity: 1,
-            transition: {
-              staggerChildren: 0.1,
-            },
-          },
         }}
-        initial="hidden"
-        animate="show"
       >
-        {console.log(filteredLearners, "filteredLearners")}
-        {filteredLearners &&
-          filteredLearners?.map((learner) => {
-            const connectionStatus = getConnectionStatus(learner.student_id);
-            const isConnected = connectionStatus === "connected";
-            const isPending = connectionStatus === "pending";
-            if (learner.student_id != localStorage.getItem("userId"))
-              return (
-                <motion.div
-                  key={learner.student_id}
-                  variants={{
-                    hidden: { opacity: 0, y: 20 },
-                    show: { opacity: 1, y: 0 },
-                  }}
-                  whileHover={{ y: -5 }}
-                  className="bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow p-6"
-                >
-                  <Link to={`/${learner.student_id}`}>
-                    <div className="flex gap-4">
-                      <img
-                        src={
-                          learner.profile_image ||
-                          `https://ui-avatars.com/api/?name=${
-                            learner.first_name + " " + learner.last_name
-                          }&background=random`
-                        }
-                        alt={`${learner.first_name} ${learner.last_name}`}
-                        className="w-13 h-13 rounded-full object-cover"
-                      />
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-lg text-gray-900">{`${learner.first_name} ${learner.last_name}`}</h3>
-                        <p className="text-gray-600 text-sm flex items-center gap-1">
-                          <GraduationCap className="w-4 h-4" />
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-8"
+        >
+          <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+            Users Directory
+          </h1>
+          <p className="text-gray-400">
+            Connect with other learners and mentors
+          </p>
+        </motion.div>
 
-                          {learner.grade_level || "Beginner"}
-                        </p>
-                        <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-green-500 h-2 rounded-full"
-                            style={{ width: `${learner.progress || 0}%` }}
+        {/* Search and Filter Bar */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="mb-8"
+        >
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="relative flex-1">
+              <div
+                className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+                style={{
+                  zIndex: 10000,
+                }}
+              >
+                <Search className="w-5 h-5 text-gray-400" />
+              </div>
+
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search users..."
+                className="w-full pl-10 pr-4 py-2 bg-gray-800/50 backdrop-blur-lg border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowFilters(!showFilters)}
+              className="px-4 py-2 bg-gray-800/50 backdrop-blur-lg border border-gray-700 rounded-lg text-white flex items-center gap-2"
+            >
+              <Filter className="w-5 h-5" />
+              <span>Filters</span>
+            </motion.button>
+          </div>
+
+          {/* Filter Options */}
+          <AnimatePresence>
+            {showFilters && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mt-4 flex flex-wrap gap-2"
+              >
+                {filters.map((filter) => (
+                  <motion.button
+                    key={filter.id}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setSelectedInterest(filter.id)}
+                    className={`px-4 py-2 rounded-lg text-sm ${
+                      selectedInterest === filter.id
+                        ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white"
+                        : "bg-gray-800/50 backdrop-blur-lg border border-gray-700 text-gray-400"
+                    }`}
+                  >
+                    {filter.label}
+                  </motion.button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+
+        {/* Learners Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <AnimatePresence>
+            {filteredLearners.map((learner, index) => {
+              const connectionStatus = getConnectionStatus(learner.student_id);
+              const isConnected = connectionStatus === "connected";
+              const isPending = connectionStatus === "pending";
+              if (learner.student_id != localStorage.getItem("userId"))
+                return (
+                  <motion.div
+                    key={learner.student_id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3, delay: index * 0.1 }}
+                    className="group relative w-full"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg blur opacity-30 group-hover:opacity-50 transition duration-200" />
+                    <div className="relative bg-gray-800/50 backdrop-blur-lg rounded-lg border border-gray-700 hover:border-blue-500/50 transition-colors p-6 h-full">
+                      <div
+                        className="flex items-start justify-between mb-4 cursor-pointer"
+                        onClick={() => navigate(`/${learner.student_id}`)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 p-0.5">
+                            <div className="w-full h-full rounded-full bg-gray-800 flex items-center justify-center">
+                              <img
+                                src={
+                                  learner.profile_image ||
+                                  `https://ui-avatars.com/api/?name=${
+                                    learner.first_name + " " + learner.last_name
+                                  }&background=random`
+                                }
+                                alt={`${learner.first_name} ${learner.last_name}`}
+                                className="w-6 h-6 rounded-full object-cover"
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <h3 className="text-white font-semibold">{`${learner.first_name} ${learner.last_name}`}</h3>
+                            <p className="text-sm text-gray-400">
+                              {learner.grade_level || "Beginner"}
+                            </p>
+                          </div>
+                        </div>
+                        <motion.button
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          className="text-gray-400 hover:text-yellow-400"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // Add favorite functionality here
+                          }}
+                        >
+                          <Star
+                            className={`w-5 h-5 ${
+                              learner.isFavorite ? "fill-yellow-400" : ""
+                            }`}
                           />
+                        </motion.button>
+                      </div>
+
+                      <div className="space-y-2 mb-4">
+                        <div className="flex items-center gap-2 text-gray-400">
+                          <GraduationCap className="w-4 h-4" />
+                          <span className="text-sm">
+                            {learner.grade_level || "Beginner"}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-gray-400">
+                          <Users className="w-4 h-4" />
+                          <span className="text-sm">
+                            {userConnectionsCount[learner.student_id] !==
+                            undefined
+                              ? userConnectionsCount[learner.student_id]
+                              : "..."}{" "}
+                            connections
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <span
+                          className={`text-sm ${
+                            isConnected ? "text-green-400" : "text-gray-400"
+                          }`}
+                        >
+                          {isConnected ? "Connected" : "Not Connected"}
+                        </span>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleConnect(learner.student_id)}
+                            disabled={isConnected || isPending}
+                            className={`flex-1 px-3 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg flex items-center justify-center gap-1 text-sm ${
+                              isConnected || isPending
+                                ? "cursor-not-allowed opacity-75"
+                                : "hover:bg-blue-600"
+                            }`}
+                          >
+                            <UserPlus className="w-4 h-4" />
+                            {isConnected
+                              ? "Connected"
+                              : isPending
+                              ? "Pending"
+                              : "Connect"}
+                          </button>
+                          <button
+                            onClick={() =>
+                              handleMessageClick(learner.student_id)
+                            }
+                            disabled={!isConnected}
+                            className={`flex-1 px-3 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg flex items-center justify-center gap-1 text-sm ${
+                              isConnected
+                                ? "hover:bg-blue-600"
+                                : "cursor-not-allowed opacity-75"
+                            }`}
+                          >
+                            <MessageCircle className="w-4 h-4" />
+                            Message
+                          </button>
                         </div>
                       </div>
                     </div>
-                  </Link>
-                  <div className="mt-4">
-                    <p className="text-sm text-gray-600">
-                      {learner.goals || "Learning and growing"}
-                    </p>
-                  </div>
-
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {learner.interests?.map((interest) => (
-                      <span
-                        key={interest}
-                        className="px-2 py-1 bg-green-50 text-green-600 text-xs rounded-full"
-                      >
-                        {interest}
-                      </span>
-                    ))}
-                  </div>
-
-                  <div className="mt-4 flex gap-2">
-                    <div className="flex items-center gap-1 mr-2">
-                      <UserPlus className="w-4 h-4 text-green-500" />
-                      <span className="text-sm">
-                        {userConnectionsCount[learner.student_id] !== undefined
-                          ? userConnectionsCount[learner.student_id]
-                          : "..."}{" "}
-                        connections
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => {
-                        handleConnect(learner.student_id);
-                      }}
-                      disabled={isConnected || isPending}
-                      className={`flex-1 py-2 rounded-lg transition-colors flex items-center justify-center gap-2 ${
-                        isConnected
-                          ? "bg-gray-500 text-white cursor-not-allowed"
-                          : isPending
-                          ? "bg-yellow-500 text-white cursor-not-allowed"
-                          : "bg-green-500 text-white hover:bg-green-600"
-                      }`}
-                    >
-                      {isConnected ? (
-                        <>
-                          <UserPlus className="w-4 h-4" />
-                          Connected
-                        </>
-                      ) : isPending ? (
-                        <>
-                          <UserPlus className="w-4 h-4" />
-                          Pending
-                        </>
-                      ) : (
-                        <>
-                          <UserPlus className="w-4 h-4" />
-                          Connect
-                        </>
-                      )}
-                    </button>
-                    <button
-                      onClick={() => handleMessageClick(learner.student_id)}
-                      disabled={!isConnected}
-                      className={`px-4 py-2 border border-gray-300 rounded-lg transition-colors flex items-center justify-center
-                        ${
-                          isConnected
-                            ? "hover:bg-gray-50"
-                            : "bg-gray-200 text-gray-400 cursor-not-allowed"
-                        }
-                      `}
-                    >
-                      <MessageCircle className="w-4 h-4" />
-                    </button>
-                  </div>
-                  {learner.skills && (
-                    <div style={{ padding: "10px" }}>
-                      {learner.skills.map((skill) => (
-                        <Tag color="green">{skill.skill_name}</Tag>
-                      ))}
-                    </div>
-                  )}
-                </motion.div>
-              );
-          })}
-      </motion.div>
+                  </motion.div>
+                );
+            })}
+          </AnimatePresence>
+        </div>
+      </div>
     </div>
   );
 };

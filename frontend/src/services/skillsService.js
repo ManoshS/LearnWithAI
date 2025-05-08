@@ -27,12 +27,12 @@ export const updateUserSkills = async (skillName) => {
     });
 
     // Then add the skill to the user
-    const response = await axiosInstance.post("/api/users/addSkills", {
-      skill_name: trimmedSkill,
-      proficiency_level: 1, // Default proficiency level
-    });
+    // const response = await axiosInstance.post("/api/users/addSkills", {
+    //   skill_name: trimmedSkill,
+    //   proficiency_level: 1, // Default proficiency level
+    // });
 
-    return response.data;
+    // return response.data;
   } catch (error) {
     console.error("Error updating skills:", error);
     throw error;

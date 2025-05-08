@@ -18,6 +18,7 @@ import {
   Search,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 
 const CreateRoadmap = () => {
   const [steps, setSteps] = useState([]);
@@ -38,10 +39,8 @@ const CreateRoadmap = () => {
       const { topic, data } = JSON.parse(storedRoadmap);
       setTopic(topic);
 
-      // Parse the reply to extract steps
       const regex = /\d+\.\s?([^\n]+)/g;
       const matches = data.reply.match(regex) || [];
-      console.log(matches);
 
       const roadmapSteps = matches.map((match, index) => ({
         id: index + 1,
@@ -76,21 +75,20 @@ const CreateRoadmap = () => {
   };
 
   const [hoveredText, setHoveredText] = useState(null);
+  const [expandedStep, setExpandedStep] = useState(null);
+  const [dynamicResources, setDynamicResources] = useState({});
 
-  const handleMouseEnter = (text) => {
-    setHoveredText(text);
-  };
-
-  const handleMouseLeave = () => {
-    setHoveredText(null);
-  };
-
-  const handleSearchClick = () => {
-    if (hoveredText) {
-      const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(
-        hoveredText
-      )}`;
-      window.open(googleSearchUrl, "_blank");
+  const handleStepClick = (stepId, title) => {
+    if (expandedStep === stepId) {
+      setExpandedStep(null);
+    } else {
+      setExpandedStep(stepId);
+      if (!dynamicResources[stepId]) {
+        setDynamicResources((prev) => ({
+          ...prev,
+          [stepId]: generateDynamicResources(title),
+        }));
+      }
     }
   };
 
@@ -101,7 +99,6 @@ const CreateRoadmap = () => {
   };
 
   const generateDynamicResources = (title) => {
-    // Extract text within ** ** if it exists, otherwise use the whole title
     const extractBoldText = (text) => {
       const matches = text.match(/\*\*(.*?)\*\*/);
       return matches ? matches[1] : text;
@@ -110,7 +107,6 @@ const CreateRoadmap = () => {
     const searchTerm = extractBoldText(title);
     const searchQuery = encodeURIComponent(searchTerm);
 
-    // Add Google search as the first resource
     const resources = [
       {
         title: `${searchTerm} - Google Search`,
@@ -166,127 +162,84 @@ const CreateRoadmap = () => {
       },
     ];
 
-    // Add technology-specific resources
-    const lowerSearchTerm = searchTerm.toLowerCase();
-
-    if (lowerSearchTerm.includes(".net")) {
-      resources.push({
-        title: `${searchTerm} - Microsoft Docs`,
-        link: `https://learn.microsoft.com/en-us/search/?terms=${searchQuery}&scope=.NET`,
-        description: "Official Microsoft .NET documentation and guides",
-        type: "Documentation",
-      });
-    } else if (lowerSearchTerm.includes("react")) {
-      resources.push({
-        title: `${searchTerm} - React Docs`,
-        link: `https://react.dev/search?q=${searchQuery}`,
-        description: "Official React documentation and tutorials",
-        type: "Documentation",
-      });
-    } else if (lowerSearchTerm.includes("python")) {
-      resources.push({
-        title: `${searchTerm} - Python Docs`,
-        link: `https://docs.python.org/3/search.html?q=${searchQuery}`,
-        description: "Official Python documentation and guides",
-        type: "Documentation",
-      });
-    } else if (
-      lowerSearchTerm.includes("javascript") ||
-      lowerSearchTerm.includes("js")
-    ) {
-      resources.push({
-        title: `${searchTerm} - JavaScript.info`,
-        link: `https://javascript.info/search/?query=${searchQuery}`,
-        description: "Modern JavaScript tutorials and references",
-        type: "Tutorial",
-      });
-    }
-
     return resources;
   };
 
-  const [expandedStep, setExpandedStep] = useState(null);
-  const [dynamicResources, setDynamicResources] = useState({});
-
-  const handleStepClick = (stepId, title) => {
-    if (expandedStep === stepId) {
-      setExpandedStep(null);
-    } else {
-      setExpandedStep(stepId);
-      if (!dynamicResources[stepId]) {
-        setDynamicResources((prev) => ({
-          ...prev,
-          [stepId]: generateDynamicResources(title),
-        }));
-      }
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-[#f3ebe1] p-8 relative overflow-hidden">
-      {/* Background Pattern */}
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+      {/* Animated background pattern */}
       <div
         className="absolute inset-0 opacity-10"
-        style={{
-          backgroundImage: `
-            radial-gradient(circle at 20px 20px, #8b4513 2px, transparent 0),
-            radial-gradient(circle at 60px 60px, #8f4513 2px, transparent 0),
-            radial-gradient(circle at 100px 40px, #8f4513 2px, transparent 0)
-          `,
-          backgroundSize: "100px 100px",
-        }}
-      />
+        style={{ marginTop: "68px" }}
+      >
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `
+              radial-gradient(circle at 20px 20px, #60A5FA 2px, transparent 0),
+              radial-gradient(circle at 60px 60px, #60A5FA 2px, transparent 0),
+              radial-gradient(circle at 100px 40px, #60A5FA 2px, transparent 0)
+            `,
+            backgroundSize: "100px 100px",
+          }}
+        />
+      </div>
 
       {/* Header */}
-      <div
-        className={`text-center mb-12 transform transition-all duration-1000 ${
-          animate ? "translate-y-0 opacity-100" : "-translate-y-20 opacity-0"
-        }`}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="text-center mb-12 pt-8"
       >
-        <h1 className="text-4xl font-bold text-[#8b4513] mb-4 flex items-center justify-center">
+        <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent flex items-center justify-center">
           <Compass className="w-10 h-10 mr-3 animate-[spin_4s_linear_infinite]" />
           {topic} Learning Roadmap
         </h1>
-        <p className="text-[#5c2d0b] text-xl">
+        <p className="text-xl text-gray-300">
           Your personalized learning journey
         </p>
-      </div>
+      </motion.div>
 
       {/* Main Content */}
-      <div className="max-w-5xl mx-auto relative">
+      <div className="max-w-5xl mx-auto relative px-4">
         {/* Steps Container */}
         <div className="space-y-8 relative">
           {/* Decorative Path */}
           {steps.length > 0 && (
-            <div className="absolute left-[2.25rem] top-0 bottom-0 w-1 bg-[#8b4513] opacity-20 dashed-line" />
+            <div className="absolute left-[2.25rem] top-0 bottom-0 w-1 bg-gradient-to-b from-blue-500 to-purple-500 opacity-20" />
           )}
 
           {steps.map((step, index) => (
-            <div
+            <motion.div
               key={step.id}
-              className={`flex items-center space-x-4 transform transition-all duration-500 ${
-                animate
-                  ? "translate-x-0 opacity-100"
-                  : "translate-x-[-100px] opacity-0"
-              }`}
-              style={{ transitionDelay: `${index * 200}ms` }}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+              className="flex items-center space-x-4"
             >
-              <div className="w-16 h-16 rounded-full bg-[#8b4513] flex items-center justify-center text-white shadow-lg transform hover:scale-110 transition-transform">
+              <motion.div
+                whileHover={{ scale: 1.1 }}
+                className="w-16 h-16 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white shadow-lg"
+              >
                 {getStepIcon(index)}
-              </div>
+              </motion.div>
 
-              <div className="flex-1 bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow transform hover:-translate-y-1">
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                className="flex-1 bg-gray-800/50 backdrop-blur-lg rounded-xl p-6 shadow-lg border border-gray-700 hover:border-blue-500/50 transition-colors"
+              >
                 <div className="space-y-3">
                   <div className="flex justify-between items-start">
                     <div>
-                      <span className="text-sm text-[#5c2d0b] bg-[#f4e4bc] px-3 py-1 rounded-full inline-block">
+                      <span className="text-sm text-blue-400 bg-blue-500/10 px-3 py-1 rounded-full inline-block">
                         Step {index + 1}
                       </span>
                       <div
-                        className="relative group flex items-center space-x-2 text-xl font-semibold text-[#8b4513] cursor-pointer"
+                        className="relative group flex items-center space-x-2 text-xl font-semibold text-white cursor-pointer"
                         onClick={() => handleStepClick(step.id, step.title)}
                       >
-                        <span className="text-xl hover:text-blue-500">
+                        <span className="text-xl hover:text-blue-400">
                           {formatTitle(step.title)}
                         </span>
                         <ChevronRight
@@ -299,71 +252,81 @@ const CreateRoadmap = () => {
                   </div>
 
                   {/* Dynamic Resources Section */}
-                  {expandedStep === step.id && (
-                    <div className="mt-4 space-y-3">
-                      <h4 className="text-sm font-semibold text-gray-600 flex items-center">
-                        <Search className="w-4 h-4 mr-2" />
-                        Learning Resources for {formatTitle(step.title)}:
-                      </h4>
-                      <div className="grid grid-cols-1 gap-3">
-                        {dynamicResources[step.id]?.map((resource, idx) => (
-                          <a
-                            key={idx}
-                            href={resource.link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex flex-col p-3 rounded-lg border border-gray-200 hover:border-blue-500 hover:shadow-md transition-all"
-                          >
-                            <div className="flex items-center justify-between">
-                              <h5 className="text-sm font-medium text-blue-600">
-                                {resource.title}
-                              </h5>
-                              <span
-                                className={`text-xs px-2 py-1 rounded-full ${
-                                  resource.type === "Documentation"
-                                    ? "bg-purple-100 text-purple-600"
-                                    : resource.type === "Tutorial"
-                                    ? "bg-green-100 text-green-600"
-                                    : resource.type === "Code"
-                                    ? "bg-orange-100 text-orange-600"
-                                    : resource.type === "Community"
-                                    ? "bg-blue-100 text-blue-600"
-                                    : resource.type === "Search"
-                                    ? "bg-red-100 text-red-600"
-                                    : resource.type === "Video"
-                                    ? "bg-pink-100 text-pink-600"
-                                    : "bg-gray-100 text-gray-600"
-                                }`}
-                              >
-                                {resource.type}
-                              </span>
-                            </div>
-                            <p className="text-xs text-gray-500 mt-1">
-                              {resource.description}
-                            </p>
-                          </a>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  <AnimatePresence>
+                    {expandedStep === step.id && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="mt-4 space-y-3"
+                      >
+                        <h4 className="text-sm font-semibold text-gray-400 flex items-center">
+                          <Search className="w-4 h-4 mr-2" />
+                          Learning Resources for {formatTitle(step.title)}:
+                        </h4>
+                        <div className="grid grid-cols-1 gap-3">
+                          {dynamicResources[step.id]?.map((resource, idx) => (
+                            <motion.a
+                              key={idx}
+                              href={resource.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              whileHover={{ scale: 1.02 }}
+                              className="flex flex-col p-3 rounded-lg bg-gray-700/50 border border-gray-600 hover:border-blue-500/50 hover:shadow-md transition-all"
+                            >
+                              <div className="flex items-center justify-between">
+                                <h5 className="text-sm font-medium text-blue-400">
+                                  {resource.title}
+                                </h5>
+                                <span
+                                  className={`text-xs px-2 py-1 rounded-full ${
+                                    resource.type === "Documentation"
+                                      ? "bg-purple-500/20 text-purple-400"
+                                      : resource.type === "Tutorial"
+                                      ? "bg-green-500/20 text-green-400"
+                                      : resource.type === "Code"
+                                      ? "bg-orange-500/20 text-orange-400"
+                                      : resource.type === "Community"
+                                      ? "bg-blue-500/20 text-blue-400"
+                                      : resource.type === "Search"
+                                      ? "bg-red-500/20 text-red-400"
+                                      : resource.type === "Video"
+                                      ? "bg-pink-500/20 text-pink-400"
+                                      : "bg-gray-500/20 text-gray-400"
+                                  }`}
+                                >
+                                  {resource.type}
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-400 mt-1">
+                                {resource.description}
+                              </p>
+                            </motion.a>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
           ))}
 
           {/* Final Achievement */}
           {steps.length > 0 && (
-            <div
-              className={`absolute -bottom-16 right-0 transform transition-all duration-1000 ${
-                animate
-                  ? "translate-x-0 opacity-100"
-                  : "translate-x-[100px] opacity-0"
-              }`}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: steps.length * 0.1 }}
+              className="flex justify-center mt-12"
             >
-              <div className="w-24 h-24 bg-[#8b4513] rounded-full flex items-center justify-center animate-bounce shadow-xl">
+              <motion.div
+                whileHover={{ scale: 1.1 }}
+                className="w-24 h-24 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center shadow-xl"
+              >
                 <Trophy className="w-12 h-12 text-yellow-400" />
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
           )}
         </div>
       </div>

@@ -1,96 +1,166 @@
 // ProfileCard.js
-import React from 'react';
-import BottomNavBar from './BottomNavBar';
+import React from "react";
+import { motion } from "framer-motion";
+import {
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Github,
+  Linkedin,
+  Twitter,
+  Edit2,
+  Award,
+  BookOpen,
+  Target,
+} from "lucide-react";
 
-const ProfileCard = () => {
-    return (
-        <div >
-            <div className="max-w-screen-sm mx-auto  rounded-lg shadow-lg overflow-hidden bg-gradient-to-r from-blue-500 to-purple-600 p-4 text-white">
-                {/* Background Image */}
-                <div className="relative">
-                    <div
-                        className="h-40 bg-cover bg-center rounded-t-lg"
-                        style={{ backgroundImage: 'url(https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSOTh9LHprIneQWgTckln-omCMRJ51YN9xMXg&s)' }}
-                    >
-                        {/* Profile Image */}
-                        <div className="absolute -bottom-10 left-4">
-                            <img
-                                className="w-24 h-24 rounded-full border-4 border-white"
-                                src="https://randomuser.me/api/portraits/men/75.jpg"
-                                alt="Profile"
-                            />
-                        </div>
-                    </div>
-                </div>
+const ProfileCard = ({ user }) => {
+  const stats = [
+    { label: "Courses", value: "12", icon: <BookOpen className="w-5 h-5" /> },
+    { label: "Achievements", value: "8", icon: <Award className="w-5 h-5" /> },
+    { label: "Goals", value: "5", icon: <Target className="w-5 h-5" /> },
+  ];
 
-                {/* User Info */}
-                <div className="mt-12 ">
-                    <h2 className="text-5xl text-center font-semibold">John Doe</h2>
-                    <p className="mt-2 text-gray-100"><strong>10</strong> Friends</p>
-                    <div className='flex cursor-pointer text-gray-950 text-2xl font-serif bg-violet-500  hover:bg-violet-600 active:bg-violet-700 focus:outline-none focus:ring focus:ring-violet-30'>
-                        <h2 className='flex-auto  hover:underline'> About </h2> <h2 className='flex-auto hover:underline'>Friends</h2> <h2 className='flex-auto hover:underline'>CommonFriends</h2>
-                    </div>
+  const socialLinks = [
+    { icon: <Github className="w-5 h-5" />, href: "https://github.com" },
+    { icon: <Linkedin className="w-5 h-5" />, href: "https://linkedin.com" },
+    { icon: <Twitter className="w-5 h-5" />, href: "https://twitter.com" },
+  ];
 
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+      {/* Animated background pattern */}
+      <div className=" inset-0 opacity-10">
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `
+              radial-gradient(circle at 20px 20px, #60A5FA 2px, transparent 0),
+              radial-gradient(circle at 60px 60px, #60A5FA 2px, transparent 0),
+              radial-gradient(circle at 100px 40px, #60A5FA 2px, transparent 0)
+            `,
+            backgroundSize: "100px 100px",
+          }}
+        />
+      </div>
 
-                    <div className="mt-4 space-y-2">
-                        <p>Friends: <strong>10</strong></p>
-                        <p>Hobbies: <strong>Reading, Gaming</strong></p>
-                        <p>Skills: <strong>Coding, Web Development</strong></p>
-                    </div>
-                    <div className="mt-6">
-                        <h3 className="text-2xl font-bold">Actions</h3>
-                        <ul className="mt-2">
-                            <li className="items-center space-x-2">
-                                <span className="text-lg font-bold">Title 1 :</span>
-
-                                <img
-                                    className="w-40 h-40  flex-row"
-                                    src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSOTh9LHprIneQWgTckln-omCMRJ51YN9xMXg&s"
-                                    alt="Profile"
-                                />
-                                <span>Message of the day</span>
-
-                            </li>
-
-                            <li className="flex items-center space-x-2">
-                                <span className="text-lg font-bold">Title 2 :</span>
-                                <span>Message of the day</span>
-                            </li>
-                        </ul>
-                    </div>
-
-                    {/* Friends List */}
-                    <div className="mt-6">
-                        <h3 className="text-2xl font-bold">Friends List</h3>
-                        <ul className="mt-2">
-                            <li className="flex items-center space-x-2">
-                                <span className="text-lg">👤</span>
-                                <span>Friend 1</span>
-                            </li>
-                            <li className="flex items-center space-x-2">
-                                <span className="text-lg">👤</span>
-                                <span>Friend 2</span>
-                            </li>
-                        </ul>
-                    </div>
-
-                    {/* Search Button */}
-                    <button className="mt-6 px-4 py-2 bg-yellow-500 text-white rounded-full hover:bg-yellow-600 transition duration-300 ease-in-out transform hover:scale-105">
-                        Search New Friends
-                    </button>
-
-                </div>
-                <div>
-
-                </div>
+      <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="group relative"
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl blur opacity-30 group-hover:opacity-50 transition duration-200" />
+          <div className="relative bg-gray-800/50 backdrop-blur-lg rounded-2xl border border-gray-700 hover:border-blue-500/50 transition-colors overflow-hidden">
+            {/* Cover Image */}
+            <div className="h-48 bg-gradient-to-r from-blue-500 to-purple-500 relative">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="absolute top-4 right-4 p-2 bg-gray-800/50 backdrop-blur-lg rounded-lg text-white hover:bg-gray-700/50 transition-colors"
+              >
+                <Edit2 className="w-5 h-5" />
+              </motion.button>
             </div>
-            {/* <div className="max-w-screen-sm  mx-auto my-4 rounded-lg shadow-lg overflow-hidden relative ">
-                <BottomNavBar  />
-            </div> */}
-            <BottomNavBar />
 
-        </div>
-    );
+            {/* Profile Content */}
+            <div className="px-6 py-8">
+              {/* Profile Header */}
+              <div className="flex flex-col md:flex-row items-center md:items-start gap-6 mb-8">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                  className="relative -mt-20"
+                >
+                  <div className="w-32 h-32 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 p-1">
+                    <div className="w-full h-full rounded-full bg-gray-800 flex items-center justify-center">
+                      <User className="w-16 h-16 text-gray-400" />
+                    </div>
+                  </div>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="absolute bottom-0 right-0 p-2 bg-gray-800/50 backdrop-blur-lg rounded-lg text-white hover:bg-gray-700/50 transition-colors"
+                  >
+                    <Edit2 className="w-5 h-5" />
+                  </motion.button>
+                </motion.div>
+
+                <div className="flex-1 text-center md:text-left">
+                  <h1 className="text-3xl font-bold text-white mb-2">
+                    {user?.name || "John Doe"}
+                  </h1>
+                  <p className="text-gray-400 mb-4">
+                    {user?.title || "Full Stack Developer"}
+                  </p>
+                  <div className="flex justify-center md:justify-start gap-4">
+                    {socialLinks.map((social, index) => (
+                      <motion.a
+                        key={index}
+                        href={social.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="text-gray-400 hover:text-white transition-colors"
+                      >
+                        {social.icon}
+                      </motion.a>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Stats */}
+              <div className="grid grid-cols-3 gap-4 mb-8">
+                {stats.map((stat, index) => (
+                  <motion.div
+                    key={stat.label}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: index * 0.1 }}
+                    className="bg-gray-700/30 rounded-lg p-4 text-center"
+                  >
+                    <div className="flex justify-center mb-2 text-blue-400">
+                      {stat.icon}
+                    </div>
+                    <div className="text-2xl font-bold text-white mb-1">
+                      {stat.value}
+                    </div>
+                    <div className="text-sm text-gray-400">{stat.label}</div>
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Contact Info */}
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold text-white mb-4">
+                  Contact Information
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center gap-3 text-gray-400">
+                    <Mail className="w-5 h-5" />
+                    <span>{user?.email || "john.doe@example.com"}</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-gray-400">
+                    <Phone className="w-5 h-5" />
+                    <span>{user?.phone || "+1 234 567 890"}</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-gray-400">
+                    <MapPin className="w-5 h-5" />
+                    <span>{user?.location || "San Francisco, CA"}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    </div>
+  );
 };
 
 export default ProfileCard;

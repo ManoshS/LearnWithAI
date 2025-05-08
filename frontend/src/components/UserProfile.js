@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   User,
   Award,
@@ -17,6 +18,17 @@ import {
   X,
   EditIcon,
   MessageCircle,
+  Phone,
+  Github,
+  Linkedin,
+  Twitter,
+  Edit2,
+  BookOpen,
+  Target,
+  Briefcase,
+  GraduationCap,
+  Star,
+  UserPlus,
 } from "lucide-react";
 import axiosInstance from "../authComponent/axiosConnection";
 import { useUser } from "../context/UserContext";
@@ -112,6 +124,37 @@ const UserProfile = ({ id }) => {
   const navigate = useNavigate();
   const currentUserId = localStorage.getItem("userId");
   const [totalConnections, setTotalConnections] = useState(0);
+  const [activeTab, setActiveTab] = useState("about");
+  const [isEditing, setIsEditing] = useState(false);
+
+  const stats = [
+    {
+      label: "Students",
+      value: "45",
+      icon: <Users className="w-5 h-5" />,
+    },
+    {
+      label: "Courses",
+      value: "12",
+      icon: <BookOpen className="w-5 h-5" />,
+    },
+    {
+      label: "Achievements",
+      value: "8",
+      icon: <Award className="w-5 h-5" />,
+    },
+    {
+      label: "Goals",
+      value: "5",
+      icon: <Target className="w-5 h-5" />,
+    },
+  ];
+
+  const socialLinks = [
+    { icon: <Github className="w-5 h-5" />, href: "https://github.com" },
+    { icon: <Linkedin className="w-5 h-5" />, href: "https://linkedin.com" },
+    { icon: <Twitter className="w-5 h-5" />, href: "https://twitter.com" },
+  ];
 
   useEffect(() => {
     const fetchData = async () => {
@@ -463,28 +506,40 @@ const UserProfile = ({ id }) => {
   };
 
   return (
-    <div
-      className="min-h-screen bg-gray-50 py-8"
-      style={{
-        backgroundImage: `
-          radial-gradient(circle at 20px 10px, #939393 2px, transparent 0),
-          radial-gradient(circle at 40px 20px, #939393 2px, transparent 0),
-          radial-gradient(circle at 80px 40px, #939393 2px, transparent 0)
-        `,
-        backgroundSize: "100px 100px",
-      }}
-    >
-      <div className="max-w-6xl mx-auto px-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+      {/* Animated background pattern */}
+      <div
+        className="absolute inset-0 opacity-10"
+        style={{ marginTop: "68px" }}
+      >
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `
+              radial-gradient(circle at 20px 20px, #60A5FA 2px, transparent 0),
+              radial-gradient(circle at 60px 60px, #60A5FA 2px, transparent 0),
+              radial-gradient(circle at 100px 40px, #60A5FA 2px, transparent 0)
+            `,
+            backgroundSize: "100px 100px",
+          }}
+        />
+      </div>
+
+      <div className="relative max-w-6xl mx-auto px-4 py-12">
         <div className="grid grid-cols-12 gap-6">
           {/* Left Column - Main Profile */}
           <div className="col-span-12 lg:col-span-8 space-y-6">
             {/* Profile Header */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="bg-gray-800/50 backdrop-blur-lg rounded-xl p-6 shadow-xl border border-gray-700"
+            >
               <div className="flex items-start justify-between">
                 <div className="flex space-x-4">
                   <div className="relative">
-                    <div className="w-22 h-22 rounded-full bg-blue-100 flex items-center justify-center">
-                      {/* <User className="w-12 h-12 text-blue-600" /> */}
+                    <div className="w-22 h-22 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 p-1">
                       <img
                         src={
                           userData
@@ -501,62 +556,63 @@ const UserProfile = ({ id }) => {
                         className="w-20 h-20 rounded-full object-cover"
                       />
                     </div>
-                    <div className="absolute -bottom-2 right-0 bg-green-500 w-5 h-5 rounded-full border-2 border-white"></div>
+                    <div className="absolute -bottom-2 right-0 bg-green-500 w-5 h-5 rounded-full border-2 border-gray-800"></div>
                   </div>
                   <div>
-                    <h1 className="text-2xl font-bold">
+                    <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
                       {userData.first_name + " " + userData.last_name}
                     </h1>
-                    <p className="text-gray-600">
+                    <p className="text-gray-400">
                       {userData.bio || userData.grade_level || "User"}
                     </p>
                     <div className="mt-2 flex flex-wrap gap-2">
-                      <span className="flex items-center text-sm text-gray-500">
+                      <span className="flex items-center text-sm text-gray-400">
                         <MapPin className="w-4 h-4 mr-1" />
                         {"Bengaluru"}
                       </span>
-                      <span className="flex items-center text-sm text-gray-500">
+                      <span className="flex items-center text-sm text-gray-400">
                         <Mail className="w-4 h-4 mr-1" />
                         {userData.email}
                       </span>
-                      {/* <span className="flex items-center text-sm text-gray-500">
-                        <Calendar className="w-4 h-4 mr-1" />
-                        Joined {userData.joinDate}
-                      </span> */}
                     </div>
                   </div>
                 </div>
                 <div className="flex gap-2">
                   {userId !== currentUserId && isConnected && (
-                    <button
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                       onClick={handleChatClick}
-                      className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors duration-200 flex items-center"
+                      className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-2 rounded-lg hover:opacity-90 transition-all duration-200 flex items-center"
                     >
                       <MessageCircle className="w-4 h-4 mr-2" />
                       Chat
-                    </button>
+                    </motion.button>
                   )}
                   {userId === currentUserId ? (
                     <Link to="../add-skills">
-                      <button className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center">
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-6 py-2 rounded-lg hover:opacity-90 transition-all duration-200 flex items-center"
+                      >
                         <EditIcon className="w-4 h-4 mr-2" />
                         Edit Skills
-                      </button>
+                      </motion.button>
                     </Link>
                   ) : (
-                    <button
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                       onClick={handleConnect}
                       disabled={connectionStatus !== "not_connected"}
-                      className={`bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors duration-200 flex items-center
+                      className={`px-6 py-2 rounded-lg transition-all duration-200 flex items-center
                         ${
                           connectionStatus === "connected"
                             ? "bg-gray-500 cursor-not-allowed"
-                            : ""
-                        }
-                        ${
-                          connectionStatus === "pending"
+                            : connectionStatus === "pending"
                             ? "bg-yellow-500 cursor-not-allowed"
-                            : ""
+                            : "bg-gradient-to-r from-blue-500 to-purple-500 hover:opacity-90"
                         }
                       `}
                     >
@@ -566,13 +622,17 @@ const UserProfile = ({ id }) => {
                         : connectionStatus === "pending"
                         ? "Pending"
                         : "Connect"}
-                    </button>
+                    </motion.button>
                   )}
                   {userId === currentUserId && (
                     <Link to="/chat-list">
-                      <button className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center">
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-6 py-2 rounded-lg hover:opacity-90 transition-all duration-200 flex items-center"
+                      >
                         View All Chats
-                      </button>
+                      </motion.button>
                     </Link>
                   )}
                 </div>
@@ -580,128 +640,171 @@ const UserProfile = ({ id }) => {
 
               {/* Skills */}
               <div className="mt-6">
-                <h2 className="text-lg font-semibold mb-3">Skills</h2>
+                <h2 className="text-lg font-semibold text-white mb-3">
+                  Skills
+                </h2>
                 <div className="flex flex-wrap gap-2">
                   {skills &&
                     skills
                       ?.slice(0, showAllSkills ? 0 : 3)
                       .map((skill, index) => (
-                        <span
+                        <motion.span
                           key={index}
-                          className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-sm font-medium"
+                          whileHover={{ scale: 1.05 }}
+                          className="bg-blue-500/10 text-blue-400 px-3 py-1 rounded-full text-sm font-medium border border-blue-500/20"
                         >
                           {skill.skill_name}
-                        </span>
+                        </motion.span>
                       ))}
 
                   {!showAllSkills && skills.length > 3 && (
-                    <button
-                      // onClick={() => setShowAllSkills(true)}
-                      className="text-blue-600 text-sm font-medium hover:underline"
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="text-blue-400 text-sm font-medium hover:text-blue-300"
                     >
                       +{skills.length - 3} more
-                    </button>
+                    </motion.button>
                   )}
                 </div>
               </div>
-            </div>
+            </motion.div>
 
             {/* Active Courses */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="bg-gray-800/50 backdrop-blur-lg rounded-xl p-6 shadow-xl border border-gray-700"
+            >
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold">Active Courses</h2>
-                <span className="text-sm text-gray-500">
+                <h2 className="text-lg font-semibold text-white">
+                  Active Courses
+                </h2>
+                <span className="text-sm text-gray-400">
                   {activeCourses.length} courses
                 </span>
               </div>
               <div className="space-y-4">
                 {activeCourses.map((course) => (
-                  <div
+                  <motion.div
                     key={course.id}
-                    className="border rounded-lg p-4 hover:border-blue-200 transition-colors duration-200"
+                    whileHover={{ scale: 1.02 }}
+                    className="bg-gray-700/50 rounded-lg p-4 border border-gray-600 hover:border-blue-500/50 transition-colors"
                   >
                     <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-medium">{course.title}</h3>
-                      <span className="text-sm text-gray-500">
+                      <h3 className="font-medium text-white">{course.title}</h3>
+                      <span className="text-sm text-gray-400">
                         {course.lastAccessed}
                       </span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
-                      <div
-                        className="bg-blue-600 h-2 rounded-full transition-all duration-500"
-                        style={{ width: `${course.progress}%` }}
-                      ></div>
+                    <div className="w-full bg-gray-600 rounded-full h-2 mb-2">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${course.progress}%` }}
+                        transition={{ duration: 1, ease: "easeOut" }}
+                        className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500"
+                      />
                     </div>
-                    <span className="text-sm text-gray-600">
+                    <span className="text-sm text-gray-400">
                       {course.progress}% completed
                     </span>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
-            </div>
-            {/* {data ? <pre>{JSON.stringify(data, null, 1)}</pre> : <p>Loading...</p>} */}
+            </motion.div>
+
             {/* Posts */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-lg font-semibold mb-4">Recent Posts</h2>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="bg-gray-800/50 backdrop-blur-lg rounded-xl p-6 shadow-xl border border-gray-700"
+            >
+              <h2 className="text-lg font-semibold text-white mb-4">
+                Recent Posts
+              </h2>
               <div className="space-y-6">
                 {posts.map((post) => (
-                  <div
+                  <motion.div
                     key={post.id}
-                    className="border-b last:border-b-0 pb-4 last:pb-0"
+                    whileHover={{ scale: 1.02 }}
+                    className="bg-gray-700/50 rounded-lg p-4 border border-gray-600 hover:border-blue-500/50 transition-colors"
                   >
-                    <p className="mb-3">{post.content}</p>
-                    <div className="flex items-center space-x-4 text-sm text-gray-500">
-                      <button className="flex items-center hover:text-blue-600">
+                    <p className="text-gray-300 mb-3">{post.content}</p>
+                    <div className="flex items-center space-x-4 text-sm text-gray-400">
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="flex items-center hover:text-blue-400"
+                      >
                         <ThumbsUp className="w-4 h-4 mr-1" />
                         {post.likes}
-                      </button>
-                      <button className="flex items-center hover:text-blue-600">
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="flex items-center hover:text-blue-400"
+                      >
                         <MessageSquare className="w-4 h-4 mr-1" />
                         {post.comments}
-                      </button>
-                      <button className="flex items-center hover:text-blue-600">
+                      </motion.button>
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="flex items-center hover:text-blue-400"
+                      >
                         <Share2 className="w-4 h-4 mr-1" />
                         Share
-                      </button>
+                      </motion.button>
                       <span className="ml-auto">{post.timeAgo}</span>
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
-            </div>
+            </motion.div>
           </div>
 
           {/* Right Column - Sidebar */}
           <div className="col-span-12 lg:col-span-4 space-y-6">
             {/* Create Roadmap Button */}
             <Link to={"/"}>
-              <button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 flex items-center justify-center space-x-2">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white p-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center space-x-2"
+              >
                 <PlusCircle className="w-5 h-5" />
                 <span>Create New Roadmap</span>
-              </button>
+              </motion.button>
             </Link>
 
             {/* Connection Requests */}
             {connectionRequests.length > 0 && (
-              <div className="bg-white rounded-lg shadow-sm p-6">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="bg-gray-800/50 backdrop-blur-lg rounded-xl p-6 shadow-xl border border-gray-700"
+              >
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg font-semibold">Connection Requests</h2>
-                  <span className="text-sm text-gray-500">
-                    {console.log(connectionRequests)}
+                  <h2 className="text-lg font-semibold text-white">
+                    Connection Requests
+                  </h2>
+                  <span className="text-sm text-gray-400">
                     {connectionRequests.length} requests
                   </span>
                 </div>
                 <div className="space-y-4">
-                  {console.log(connectionRequests)}
                   {connectionRequests.map((request) => (
-                    <div
+                    <motion.div
                       key={request.request_id}
-                      className="flex items-center justify-between"
+                      whileHover={{ scale: 1.02 }}
+                      className="flex items-center justify-between bg-gray-700/50 rounded-lg p-3 border border-gray-600"
                     >
-                      {console.log(request)}
                       <Link to={`/${request.user_id}`}>
                         <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 p-0.5">
                             <img
                               src={
                                 request
@@ -717,39 +820,45 @@ const UserProfile = ({ id }) => {
                                   ? `${request.user_name} ${request.last_name}`
                                   : "User"
                               }
-                              className="w-10 h-10 rounded-full object-cover"
+                              className="w-full h-full rounded-full object-cover"
                             />
                           </div>
                           <div>
-                            <h3 className="font-medium">{request.user_name}</h3>
-                            <p className="text-sm text-gray-500">
+                            <h3 className="font-medium text-white">
+                              {request.user_name}
+                            </h3>
+                            <p className="text-sm text-gray-400">
                               {request.bio || request.grade_level}
                             </p>
                           </div>
                         </div>
                       </Link>
                       <div className="flex space-x-2">
-                        <button
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
                           onClick={() =>
                             handleAcceptConnection(request.request_id)
                           }
-                          className="p-2 text-green-600 hover:bg-green-50 rounded-full"
+                          className="p-2 text-green-400 hover:bg-green-500/10 rounded-full transition-colors"
                         >
                           <Check className="w-5 h-5" />
-                        </button>
-                        <button
+                        </motion.button>
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
                           onClick={() =>
                             handleRejectConnection(request.request_id)
                           }
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-full"
+                          className="p-2 text-red-400 hover:bg-red-500/10 rounded-full transition-colors"
                         >
                           <X className="w-5 h-5" />
-                        </button>
+                        </motion.button>
                       </div>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
-              </div>
+              </motion.div>
             )}
 
             {/* Certificates */}
@@ -774,22 +883,29 @@ const UserProfile = ({ id }) => {
             </div>
 
             {/* Connections */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="bg-gray-800/50 backdrop-blur-lg rounded-xl p-6 shadow-xl border border-gray-700"
+            >
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold">Connections</h2>
-                <span className="text-sm text-gray-500">
+                <h2 className="text-lg font-semibold text-white">
+                  Connections
+                </h2>
+                <span className="text-sm text-gray-400">
                   {totalConnections} connections
                 </span>
               </div>
               <div className="space-y-4">
                 {connections.map((connection) => (
-                  <Link to={`/${connection.user_id}`}>
-                    <div
-                      key={connection.user_id}
-                      className="flex items-center justify-between"
+                  <Link to={`/${connection.user_id}`} key={connection.user_id}>
+                    <motion.div
+                      whileHover={{ scale: 1.02 }}
+                      className="flex items-center justify-between bg-gray-700/50 rounded-lg p-3 border border-gray-600 hover:border-blue-500/50 transition-colors"
                     >
                       <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 p-0.5">
                           <img
                             src={
                               connection
@@ -805,27 +921,26 @@ const UserProfile = ({ id }) => {
                                 ? `${connection.user_name} ${connection.last_name}`
                                 : "User"
                             }
-                            className="w-10 h-10 rounded-full object-cover"
+                            className="w-full h-full rounded-full object-cover"
                           />
                         </div>
                         <div>
-                          <h3 className="font-medium">
+                          <h3 className="font-medium text-white">
                             {connection.user_name}
                           </h3>
-                          <p className="text-sm text-gray-500">
+                          <p className="text-sm text-gray-400">
                             {connection.bio || connection.grade_level}
                           </p>
                         </div>
                       </div>
-
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-gray-400">
                         {parseInt(Math.random() * 10)} mutual
                       </span>
-                    </div>
+                    </motion.div>
                   </Link>
                 ))}
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
       </div>

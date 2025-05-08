@@ -1,7 +1,18 @@
 import React, { useState } from "react";
 import axiosInstance from "./axiosConnection";
 import { useNavigate } from "react-router-dom";
-import { Select } from "antd"; // Import Select from antd
+import { Select } from "antd";
+import { motion } from "framer-motion";
+import {
+  UserPlus,
+  User,
+  Mail,
+  Lock,
+  GraduationCap,
+  BookOpen,
+  ArrowRight,
+} from "lucide-react";
+
 const Register = () => {
   const [username, setUsername] = useState("");
   const [first_name, setFirstName] = useState("");
@@ -22,7 +33,6 @@ const Register = () => {
       return;
     }
     try {
-      // Register the user
       await axiosInstance.post("/api/auth/register", {
         username,
         first_name,
@@ -33,7 +43,6 @@ const Register = () => {
         password,
       });
 
-      // Automatically login after successful registration
       const loginResponse = await axiosInstance.post("/api/auth/login", {
         email,
         password,
@@ -41,12 +50,10 @@ const Register = () => {
 
       const token = loginResponse.data.token;
       if (token) {
-        // Store the JWT token in local storage
         localStorage.setItem("jwtToken", token);
-        localStorage.setItem("userId", loginResponse.data.userId); // Adjust according to your login response structure
-        console.log("Login successful:", loginResponse.data);
-        navigate("/");
-        // Redirect or update UI as needed
+        localStorage.setItem("userId", loginResponse.data.userId);
+        // navigate("/");
+        window.location.reload();
       } else {
         setError("Failed to retrieve token");
       }
@@ -54,7 +61,6 @@ const Register = () => {
         "Authorization"
       ] = `Bearer ${loginResponse.data.token}`;
 
-      // Redirect to skills page
       setMessage("Registration successful!");
       navigate("/add-skills");
     } catch (err) {
@@ -65,129 +71,240 @@ const Register = () => {
   const handelUserType = (value) => {
     setUserType(value);
   };
+
   return (
-    <div
-      className="flex items-center justify-center min-h-screen bg-gray-100"
-      style={{
-        backgroundImage: `
-              radial-gradient(circle at 20px 20px, #8b4513 2px, transparent 0),
-              radial-gradient(circle at 60px 60px, #8b4513 2px, transparent 0),
-              radial-gradient(circle at 100px 40px, #8b4513 2px, transparent 0)
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+      {/* Animated background pattern */}
+      <div
+        className="absolute inset-0 opacity-10"
+        style={{ marginTop: "68px" }}
+      >
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `
+              radial-gradient(circle at 20px 20px, #60A5FA 2px, transparent 0),
+              radial-gradient(circle at 60px 60px, #60A5FA 2px, transparent 0),
+              radial-gradient(circle at 100px 40px, #60A5FA 2px, transparent 0)
             `,
-        backgroundSize: "100px 100px",
-      }}
-    >
-      <div className="w-full max-w-md p-8 space-y-4   bg-white shadow-xl rounded-lg">
-        <h2 className="text-2xl font-bold text-center">Register</h2>
-        {error && <p className="text-red-500 text-sm">{error}</p>}
-        {message && <p className="text-green-500 text-sm">{message}</p>}
-
-        <form onSubmit={handleRegister} className="space-y-4">
-          <input
-            type="text"
-            className="w-full px-3 py-2 border rounded-md"
-            placeholder="User Name"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-          />
-
-          <input
-            type="text"
-            className="w-full px-3 py-2 border rounded-md"
-            placeholder="Fist Name"
-            value={first_name}
-            onChange={(e) => setFirstName(e.target.value)}
-            required
-          />
-          <input
-            type="text"
-            className="w-full px-3 py-2 border rounded-md"
-            placeholder="Last Name"
-            value={last_name}
-            onChange={(e) => setLastName(e.target.value)}
-            required
-          />
-          <Select
-            style={{ width: 150 }}
-            allowClear
-            options={[
-              { value: "student", label: "I am Student" },
-              { value: "teacher", label: "I am Teacher" },
-            ]}
-            placeholder="select it"
-            onChange={handelUserType}
-          />
-          {/* <InputLabel id="demo-simple-select-label">
-            Select Type of user
-          </InputLabel>
-          <Select
-            labelId="demo-simple-select-label"
-            id="demo-simple-select"
-            value={user_type}
-            label="user_type"
-            onChange={(e) => setUserType(e.target.value)}
-          >
-            <MenuItem value={"student"}>Student</MenuItem>
-            <MenuItem value={"teacher"}>Teacher</MenuItem>
-          </Select> */}
-
-          {/* <input
-            type="select"
-            className="w-full px-3 py-2 border rounded-md"
-            placeholder="User Type"
-            value={user_type}
-            onChange={(e) => setUserType(e.target.value)}
-            required
-
-          /> */}
-
-          <input
-            type="email"
-            className="w-full px-3 py-2 border rounded-md"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <input
-            type="password"
-            className="w-full px-3 py-2 border rounded-md"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-          <input
-            type="password"
-            className="w-full px-3 py-2 border rounded-md"
-            placeholder="Confirm Password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-          />
-          <input
-            type="text"
-            className="w-full px-3 py-2 border rounded-md"
-            placeholder="Education"
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            required
-          />
-          <button
-            type="submit"
-            className="w-full py-2 text-white bg-blue-500 rounded-md hover:bg-blue-600"
-          >
-            Register
-          </button>
-        </form>
-        <p className="text-sm text-center text-gray-600">
-          Already have an account?{" "}
-          <a href="/login" className="text-blue-500 hover:underline">
-            Login
-          </a>
-        </p>
+            backgroundSize: "100px 100px",
+          }}
+        />
       </div>
+
+      <div className="relative min-h-screen flex items-center justify-center px-4 py-12">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="w-full max-w-md"
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="bg-gray-800/50 backdrop-blur-lg rounded-xl p-8 shadow-xl border border-gray-700"
+          >
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+                Create Account
+              </h2>
+              <p className="text-gray-400 mt-2">
+                Join our learning community today
+              </p>
+            </div>
+
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm"
+              >
+                {error}
+              </motion.div>
+            )}
+
+            {message && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-4 p-3 bg-green-500/10 border border-green-500/20 rounded-lg text-green-400 text-sm"
+              >
+                {message}
+              </motion.div>
+            )}
+
+            <form onSubmit={handleRegister} className="space-y-4">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <User className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  className="w-full pl-10 pr-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <User className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    className="w-full pl-10 pr-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="First Name"
+                    value={first_name}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <User className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    className="w-full pl-10 pr-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Last Name"
+                    value={last_name}
+                    onChange={(e) => setLastName(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <GraduationCap className="h-5 w-5 text-gray-400" />
+                </div>
+                <Select
+                  style={{ width: "100%" }}
+                  allowClear
+                  options={[
+                    { value: "student", label: "I am Student" },
+                    { value: "teacher", label: "I am Teacher" },
+                  ]}
+                  placeholder="Select your role"
+                  onChange={handelUserType}
+                  className="custom-select"
+                />
+              </div>
+
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Mail className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="email"
+                  className="w-full pl-10 pr-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="password"
+                  className="w-full pl-10 pr-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="password"
+                  className="w-full pl-10 pr-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Confirm Password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <BookOpen className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  className="w-full pl-10 pr-4 py-3 bg-gray-700/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Education"
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  required
+                />
+              </div>
+
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                type="submit"
+                className="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white py-3 px-6 rounded-lg font-medium hover:from-blue-600 hover:to-purple-600 transition-all duration-200 flex items-center justify-center gap-2"
+              >
+                <UserPlus className="w-5 h-5" />
+                Create Account
+                <ArrowRight className="w-5 h-5" />
+              </motion.button>
+            </form>
+
+            <p className="mt-6 text-center text-sm text-gray-400">
+              Already have an account?{" "}
+              <motion.a
+                href="/login"
+                className="text-blue-400 hover:text-blue-300 font-medium"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Sign In
+              </motion.a>
+            </p>
+          </motion.div>
+        </motion.div>
+      </div>
+
+      <style jsx global>{`
+        .custom-select .ant-select-selector {
+          background-color: rgba(31, 41, 55, 0.5) !important;
+          border-color: rgba(75, 85, 99, 1) !important;
+          color: white !important;
+          height: 48px !important;
+          padding: 0 12px !important;
+        }
+        .custom-select .ant-select-selection-item {
+          background-color: rgba(59, 130, 246, 0.2) !important;
+          border-color: rgba(59, 130, 246, 0.3) !important;
+          color: rgb(96, 165, 250) !important;
+        }
+        .ant-select-dropdown {
+          background-color: rgb(31, 41, 55) !important;
+        }
+        .ant-select-item {
+          color: white !important;
+        }
+        .ant-select-item-option-selected {
+          background-color: rgba(59, 130, 246, 0.2) !important;
+        }
+        .ant-select-item-option-active {
+          background-color: rgba(59, 130, 246, 0.1) !important;
+        }
+      `}</style>
     </div>
   );
 };

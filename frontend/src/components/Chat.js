@@ -1,7 +1,20 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { Send, ArrowLeft } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Send,
+  Paperclip,
+  Smile,
+  Image,
+  File,
+  X,
+  Loader2,
+  User,
+  MoreVertical,
+  Phone,
+  Video,
+  Info,
+} from "lucide-react";
 import axiosInstance from "../authComponent/axiosConnection";
 import io from "socket.io-client";
 
@@ -18,6 +31,8 @@ const Chat = () => {
   const socketRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const currentUserId = localStorage.getItem("userId");
+  const [attachments, setAttachments] = useState([]);
+  const fileInputRef = useRef(null);
 
   // Check connection status first
   useEffect(() => {
@@ -165,39 +180,49 @@ const Chat = () => {
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!newMessage.trim()) return;
-
-    try {
-      const response = await axiosInstance.post("/api/messages/send", {
-        senderId: currentUserId,
-        receiverId: userId,
-        messageText: newMessage.trim(),
-      });
-
-      console.log("Message sent successfully:", response.data);
-
-      // Update messages state with the new message
-      setMessages((prev) => {
-        const messageExists = prev.some(
-          (m) => m.message_id === response.data.message_id
-        );
-        if (messageExists) return prev;
-        return [...prev, response.data];
-      });
-
-      setNewMessage("");
-      scrollToBottom();
-
-      // Emit socket event for real-time updates
-      if (socketRef.current) {
-        socketRef.current.emit("new_message", {
+    if (newMessage.trim() || attachments.length > 0) {
+      try {
+        const response = await axiosInstance.post("/api/messages/send", {
+          senderId: currentUserId,
           receiverId: userId,
-          message: response.data,
+          messageText: newMessage.trim(),
         });
+
+        console.log("Message sent successfully:", response.data);
+
+        // Update messages state with the new message
+        setMessages((prev) => {
+          const messageExists = prev.some(
+            (m) => m.message_id === response.data.message_id
+          );
+          if (messageExists) return prev;
+          return [...prev, response.data];
+        });
+
+        setNewMessage("");
+        setAttachments([]);
+        scrollToBottom();
+
+        // Emit socket event for real-time updates
+        if (socketRef.current) {
+          socketRef.current.emit("new_message", {
+            receiverId: userId,
+            message: response.data,
+          });
+        }
+      } catch (error) {
+        console.error("Error sending message:", error);
       }
-    } catch (error) {
-      console.error("Error sending message:", error);
     }
+  };
+
+  const handleFileSelect = (e) => {
+    const files = Array.from(e.target.files);
+    setAttachments([...attachments, ...files]);
+  };
+
+  const removeAttachment = (index) => {
+    setAttachments(attachments.filter((_, i) => i !== index));
   };
 
   if (loading) {
@@ -209,88 +234,186 @@ const Chat = () => {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
+    <div className="flex flex-col h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
       {/* Chat Header */}
-      <div className="bg-white shadow-sm p-4 flex items-center gap-4">
-        <button
-          onClick={() => navigate(-1)}
-          className="p-2 hover:bg-gray-100 rounded-full"
-        >
-          <ArrowLeft className="w-6 h-6" />
-        </button>
-        <div className="flex items-center gap-3">
-          <img
-            src={
-              otherUser?.profile_image ||
-              `https://ui-avatars.com/api/?name=${
-                otherUser?.first_name + " " + otherUser?.last_name
-              }&background=random`
-            }
-            alt={`${otherUser?.first_name} ${otherUser?.last_name}`}
-            className="w-10 h-10 rounded-full object-cover"
-          />
-          <div>
-            <h2 className="font-semibold text-lg">
-              {otherUser?.first_name} {otherUser?.last_name}
-            </h2>
-            <p className="text-sm text-gray-500">
-              {isTyping ? "typing..." : otherUser?.expertise || "User"}
-            </p>
+      <div className="bg-gray-800/50 backdrop-blur-lg border-b border-gray-700 p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => navigate(-1)}
+              className="p-2 hover:bg-gray-700/50 rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5 text-gray-400" />
+            </motion.button>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 p-0.5">
+                <div className="w-full h-full rounded-full bg-gray-800 flex items-center justify-center">
+                  <img
+                    src={
+                      otherUser?.profile_image ||
+                      `https://ui-avatars.com/api/?name=${
+                        otherUser?.first_name + " " + otherUser?.last_name
+                      }&background=random`
+                    }
+                    alt={`${otherUser?.first_name} ${otherUser?.last_name}`}
+                    className="w-6 h-6 text-gray-400"
+                  />
+                </div>
+              </div>
+              <div>
+                <h2 className="text-white font-semibold">
+                  {otherUser?.first_name} {otherUser?.last_name}
+                </h2>
+                <p className="text-sm text-gray-400">
+                  {isTyping ? "typing..." : otherUser?.expertise || "User"}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="p-2 hover:bg-gray-700/50 rounded-lg transition-colors"
+            >
+              <Phone className="w-5 h-5 text-gray-400" />
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="p-2 hover:bg-gray-700/50 rounded-lg transition-colors"
+            >
+              <Video className="w-5 h-5 text-gray-400" />
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="p-2 hover:bg-gray-700/50 rounded-lg transition-colors"
+            >
+              <Info className="w-5 h-5 text-gray-400" />
+            </motion.button>
           </div>
         </div>
       </div>
 
-      {/* Messages Container */}
+      {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((message) => {
-          const isMine = String(message.sender_id) === String(currentUserId);
-          return (
+        <AnimatePresence>
+          {messages.map((msg, index) => (
             <motion.div
-              key={message.message_id}
+              key={index}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className={`flex ${isMine ? "justify-end" : "justify-start"}`}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              className={`flex ${
+                msg.sender_id === parseInt(currentUserId)
+                  ? "justify-end"
+                  : "justify-start"
+              }`}
             >
               <div
-                className={`max-w-[70%] rounded-lg p-3 shadow-md transition-colors duration-200
-                  ${
-                    isMine
-                      ? "bg-blue-500 text-white ml-8"
-                      : "bg-gray-200 text-gray-900 mr-8"
-                  }
-                `}
+                className={`max-w-[70%] rounded-2xl p-4 ${
+                  msg.sender_id === parseInt(currentUserId)
+                    ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white"
+                    : "bg-gray-700/50 backdrop-blur-lg text-gray-200"
+                }`}
               >
-                <p>{message.message_text}</p>
-                <p className="text-xs mt-1 opacity-70 text-right">
-                  {new Date(message.created_at).toLocaleTimeString()}
-                </p>
+                <p>{msg.message_text}</p>
+                <span className="text-xs opacity-70 mt-1 block">
+                  {new Date(msg.created_at).toLocaleTimeString()}
+                </span>
               </div>
             </motion.div>
-          );
-        })}
+          ))}
+        </AnimatePresence>
         <div ref={messagesEndRef} />
       </div>
 
       {/* Message Input */}
-      <form
-        onSubmit={handleSendMessage}
-        className="bg-white border-t p-4 flex items-center gap-2"
-      >
-        <input
-          type="text"
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          onKeyPress={handleTyping}
-          placeholder="Type a message..."
-          className="flex-1 p-2 border rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <button
-          type="submit"
-          className="p-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors"
-        >
-          <Send className="w-5 h-5" />
-        </button>
-      </form>
+      <div className="bg-gray-800/50 backdrop-blur-lg border-t border-gray-700 p-4">
+        <form onSubmit={handleSendMessage} className="space-y-4">
+          {/* Attachments Preview */}
+          {attachments.length > 0 && (
+            <div className="flex gap-2 overflow-x-auto pb-2">
+              {attachments.map((file, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="relative group"
+                >
+                  <div className="w-20 h-20 rounded-lg bg-gray-700/50 flex items-center justify-center">
+                    {file.type.startsWith("image/") ? (
+                      <Image className="w-8 h-8 text-gray-400" />
+                    ) : (
+                      <File className="w-8 h-8 text-gray-400" />
+                    )}
+                  </div>
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => removeAttachment(index)}
+                    className="absolute -top-2 -right-2 p-1 bg-red-500 rounded-full text-white"
+                  >
+                    <X className="w-4 h-4" />
+                  </motion.button>
+                </motion.div>
+              ))}
+            </div>
+          )}
+
+          <div className="flex items-center gap-2">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="p-2 hover:bg-gray-700/50 rounded-lg transition-colors"
+            >
+              <Paperclip className="w-5 h-5 text-gray-400" />
+            </motion.button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileSelect}
+              multiple
+              className="hidden"
+            />
+            <input
+              type="text"
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              onKeyPress={handleTyping}
+              placeholder="Type a message..."
+              className="flex-1 bg-gray-700/50 backdrop-blur-lg text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              type="button"
+              className="p-2 hover:bg-gray-700/50 rounded-lg transition-colors"
+            >
+              <Smile className="w-5 h-5 text-gray-400" />
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              type="submit"
+              disabled={!newMessage.trim() && attachments.length === 0}
+              className="p-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isTyping ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Send className="w-5 h-5" />
+              )}
+            </motion.button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };

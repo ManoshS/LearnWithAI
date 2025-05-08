@@ -42,7 +42,7 @@ router.post("/skills", authenticate, async (req, res) => {
   }
 });
 
-router.delete("/skills/:skillId", authenticate, async (req, res) => {
+router.delete("/user/skills/:skillId", authenticate, async (req, res) => {
   try {
     const userId = req.user.userId;
     const skillId = req.params.skillId;
@@ -62,5 +62,10 @@ router.get("/skills", authenticate, async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+// Skills routes
+router.get("/getSkillsById/:userId", userController.getSkillsById);
+router.post("/addSkill", userController.addSkills);
+router.delete("/skills/:skillId", userController.deleteSkill);
 
 module.exports = router;

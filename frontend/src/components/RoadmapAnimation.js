@@ -1,98 +1,175 @@
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Code, Database, Server, Terminal, Globe, Cpu } from "lucide-react";
 
 const RoadmapPath = () => {
   const [position, setPosition] = useState({ x: 50, y: 100 });
-  
+  const [selectedTech, setSelectedTech] = useState(null);
+
   const locations = {
     start: { x: 50, y: 100 },
     html: { x: 150, y: 200 },
     css: { x: 400, y: 200 },
     javascript: { x: 150, y: 300 },
     nodejs: { x: 150, y: 400 },
-    react: { x: 150, y: 500 }
+    react: { x: 150, y: 500 },
   };
 
-  const handleClick = (pos) => {
-    setPosition(locations[pos]);
+  const techDetails = {
+    html: {
+      icon: <Code className="w-6 h-6" />,
+      color: "from-orange-500 to-orange-600",
+    },
+    css: {
+      icon: <Globe className="w-6 h-6" />,
+      color: "from-blue-500 to-blue-600",
+    },
+    javascript: {
+      icon: <Terminal className="w-6 h-6" />,
+      color: "from-yellow-500 to-yellow-600",
+    },
+    nodejs: {
+      icon: <Server className="w-6 h-6" />,
+      color: "from-green-500 to-green-600",
+    },
+    react: {
+      icon: <Cpu className="w-6 h-6" />,
+      color: "from-blue-400 to-blue-500",
+    },
+  };
+
+  const handleClick = (tech) => {
+    setPosition(locations[tech]);
+    setSelectedTech(tech);
   };
 
   return (
-    <div className="w-full h-screen bg-blue-50 p-8">
-      <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-6">
-        <h1 className="text-3xl font-bold text-center mb-8 text-blue-600">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-8">
+      <div className="max-w-6xl mx-auto bg-gray-800/50 backdrop-blur-lg rounded-2xl shadow-2xl p-8 border border-gray-700">
+        <motion.h1
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-4xl font-bold text-center mb-8 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent"
+        >
           Web Development Journey
-        </h1>
-        
+        </motion.h1>
+
         <div className="relative">
-          {/* SVG for the path */}
           <svg className="w-full h-[600px]" viewBox="0 0 500 600">
-            {/* Background decorations */}
-            <path d="M20,50 Q40,0 60,50" className="stroke-blue-200 fill-none" />
-            <path d="M400,100 Q420,50 440,100" className="stroke-blue-200 fill-none" />
-            
-            {/* Main path */}
+            {/* Animated background grid */}
+            <pattern
+              id="grid"
+              width="40"
+              height="40"
+              patternUnits="userSpaceOnUse"
+            >
+              <path
+                d="M 40 0 L 0 0 0 40"
+                fill="none"
+                stroke="rgba(255,255,255,0.1)"
+                strokeWidth="1"
+              />
+            </pattern>
+            <rect width="100%" height="100%" fill="url(#grid)" />
+
+            {/* Glowing path */}
             <path
               d="M50,100 L150,200 L400,200 M150,200 L150,300 L150,400 L150,500"
               className="stroke-blue-400 stroke-2 fill-none"
+              filter="url(#glow)"
             />
-            
+
+            {/* Glow filter */}
+            <defs>
+              <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="2" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
+            </defs>
+
             {/* Animated character */}
             <motion.g
               animate={position}
-              transition={{ duration: 0.5 }}
+              transition={{ duration: 0.5, type: "spring", stiffness: 100 }}
             >
-              <circle r="5" fill="#4B5563" />
-              <line x1="0" y1="5" x2="0" y2="15" stroke="#4B5563" strokeWidth="2" />
-              <line x1="-5" y1="10" x2="5" y2="10" stroke="#4B5563" strokeWidth="2" />
+              <circle r="8" fill="#60A5FA" filter="url(#glow)" />
+              <motion.path
+                d="M0,8 L0,20 M-8,12 L8,12"
+                stroke="#60A5FA"
+                strokeWidth="2"
+                initial={{ pathLength: 0 }}
+                animate={{ pathLength: 1 }}
+                transition={{ duration: 0.5 }}
+              />
             </motion.g>
 
             {/* Technology nodes */}
-            <g onClick={() => handleClick('start')} className="cursor-pointer">
-              <rect x="20" y="70" width="60" height="30" rx="15" className="fill-blue-500" />
-              <text x="30" y="90" className="fill-white text-sm">Start</text>
-            </g>
-
-            <g onClick={() => handleClick('html')} className="cursor-pointer">
-              <rect x="120" y="180" width="60" height="30" rx="5" className="fill-orange-500" />
-              <text x="130" y="200" className="fill-white text-sm">HTML</text>
-            </g>
-
-            <g onClick={() => handleClick('css')} className="cursor-pointer">
-              <rect x="370" y="180" width="60" height="30" rx="5" className="fill-blue-500" />
-              <text x="385" y="200" className="fill-white text-sm">CSS</text>
-            </g>
-
-            <g onClick={() => handleClick('javascript')} className="cursor-pointer">
-              <rect x="120" y="280" width="80" height="30" rx="5" className="fill-yellow-500" />
-              <text x="125" y="300" className="fill-white text-sm">JavaScript</text>
-            </g>
-
-            <g onClick={() => handleClick('nodejs')} className="cursor-pointer">
-              <rect x="120" y="380" width="70" height="30" rx="5" className="fill-green-500" />
-              <text x="130" y="400" className="fill-white text-sm">Node.js</text>
-            </g>
-
-            <g onClick={() => handleClick('react')} className="cursor-pointer">
-              <rect x="120" y="480" width="60" height="30" rx="5" className="fill-blue-400" />
-              <text x="130" y="500" className="fill-white text-sm">React</text>
-            </g>
-
-            {/* Decorative elements */}
-            <g className="text-blue-200">
-              {Array.from({ length: 10 }).map((_, i) => (
-                <path
-                  key={i}
-                  d={`M${400 + i * 20},50 l5,-5`}
-                  className="stroke-current"
+            {Object.entries(techDetails).map(([tech, { icon, color }]) => (
+              <g
+                key={tech}
+                onClick={() => handleClick(tech)}
+                className="cursor-pointer transform hover:scale-110 transition-transform"
+              >
+                <motion.rect
+                  x={locations[tech].x - 30}
+                  y={locations[tech].y - 15}
+                  width="60"
+                  height="30"
+                  rx="15"
+                  className={`fill-gradient-to-r ${color}`}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
                 />
-              ))}
-            </g>
+                <text
+                  x={locations[tech].x}
+                  y={locations[tech].y + 5}
+                  className="fill-white text-sm font-medium"
+                  textAnchor="middle"
+                >
+                  {tech.toUpperCase()}
+                </text>
+              </g>
+            ))}
           </svg>
+
+          {/* Tech Details Panel */}
+          <AnimatePresence>
+            {selectedTech && (
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                className="absolute top-0 right-0 w-64 bg-gray-800/90 backdrop-blur-lg rounded-lg p-4 border border-gray-700"
+              >
+                <div className="flex items-center space-x-3 mb-3">
+                  {techDetails[selectedTech].icon}
+                  <h3 className="text-lg font-semibold text-white">
+                    {selectedTech.toUpperCase()}
+                  </h3>
+                </div>
+                <p className="text-gray-300 text-sm">
+                  {getTechDescription(selectedTech)}
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </div>
   );
+};
+
+const getTechDescription = (tech) => {
+  const descriptions = {
+    html: "The foundation of web development. Learn to structure content and create semantic markup.",
+    css: "Style your web pages with modern CSS techniques and responsive design principles.",
+    javascript:
+      "Add interactivity and dynamic behavior to your web applications.",
+    nodejs: "Build scalable server-side applications with JavaScript.",
+    react:
+      "Create modern, interactive user interfaces with React's component-based architecture.",
+  };
+  return descriptions[tech] || "";
 };
 
 export default RoadmapPath;

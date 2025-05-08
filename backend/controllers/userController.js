@@ -193,3 +193,38 @@ exports.getAllTeachers = async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 };
+
+// Delete a skill by ID
+exports.deleteSkill = async (req, res) => {
+  try {
+    const { skillId } = req.params;
+
+    // First check if the skill exists
+    const skillExists = await pool.query(
+      "SELECT * FROM Skills WHERE skill_id = ?",
+      [skillId]
+    );
+
+    if (skillExists.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Skill not found",
+      });
+    }
+
+    // Delete the skill
+    await pool.query("DELETE FROM Skills WHERE skill_id = ?", [skillId]);
+
+    res.status(200).json({
+      success: true,
+      message: "Skill deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting skill:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete skill",
+      error: error.message,
+    });
+  }
+};
