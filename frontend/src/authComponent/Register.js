@@ -53,6 +53,8 @@ const Register = () => {
         localStorage.setItem("jwtToken", token);
         localStorage.setItem("userId", loginResponse.data.userId);
         // navigate("/");
+        setMessage("Registration successful!");
+        navigate("/add-skills");
         window.location.reload();
       } else {
         setError("Failed to retrieve token");
@@ -61,8 +63,7 @@ const Register = () => {
         "Authorization"
       ] = `Bearer ${loginResponse.data.token}`;
 
-      setMessage("Registration successful!");
-      navigate("/add-skills");
+      // navigate("/add-skills");
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed");
     }

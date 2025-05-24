@@ -46,6 +46,7 @@ const Header = () => {
   const handleLogout = () => {
     localStorage.removeItem("userId");
     localStorage.removeItem("jwtToken");
+    localStorage.removeItem("currentRoadmap");
     navigate("/login");
   };
 
