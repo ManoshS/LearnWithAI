@@ -72,7 +72,7 @@ const Chat = () => {
     if (!isConnected) return;
 
     // Initialize socket connection
-    socketRef.current = io("http://localhost:4000", {
+    socketRef.current = io(process.env.REACT_APP_BACKEND_URL, {
       withCredentials: true,
     });
 
