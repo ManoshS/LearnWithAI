@@ -10,7 +10,7 @@ const messageRoutes = require("./routes/messageRoutes");
 const server = http.createServer(app);
 const io = socketIO(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: process.env.FRONT_END_URL,
     methods: ["GET", "POST"],
     credentials: true,
   },
