@@ -321,7 +321,8 @@ const Chat = () => {
                     : "bg-gray-700/50 backdrop-blur-lg text-gray-200"
                 }`}
               >
-                <p>{msg.message_text}</p>
+                {console.log(msg.MESSAGE_TEXT)}
+                <p>{msg.MESSAGE_TEXT ? msg.MESSAGE_TEXT : msg.message_text} </p>
                 <span className="text-xs opacity-70 mt-1 block">
                   {new Date(msg.created_at).toLocaleTimeString()}
                 </span>
