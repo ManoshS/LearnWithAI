@@ -21,6 +21,10 @@ router.get(
   authenticate,
   userController.getUsersBySkillId
 );
+router.get(
+  "/getUsersBySkillName/:skillName",
+  userController.getUsersBySkillName
+);
 router.post(
   "/getUserByAnySkill",
   authenticate,

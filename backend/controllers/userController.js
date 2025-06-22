@@ -228,3 +228,106 @@ exports.deleteSkill = async (req, res) => {
     });
   }
 };
+
+// Get mentors and learners by skill name
+exports.getUsersBySkillName = async (req, res) => {
+  try {
+    const { skillName } = req.params;
+
+    // First get the skill ID
+    const [skillRows] = await pool.query(
+      "SELECT skill_id FROM skills WHERE LOWER(skill_name) LIKE LOWER(?)",
+      [`%${skillName}%`]
+    );
+
+    if (skillRows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No skills found matching the search term",
+        mentors: [],
+        learners: [],
+      });
+    }
+
+    const skillIds = skillRows.map((row) => row.skill_id);
+    const skillIdsPlaceholder = skillIds.map(() => "?").join(",");
+
+    // Get mentors (teachers) with this skill
+    const [mentorsRows] = await pool.query(
+      `
+      SELECT DISTINCT 
+        u.user_id,
+        u.username,
+        u.first_name,
+        u.last_name,
+        u.email,
+        u.user_type,
+        t.bio,
+        t.years_of_experience,
+        ts.proficiency_level,
+        s.skill_name
+      FROM users u
+      JOIN teachers t ON u.user_id = t.teacher_id
+      JOIN teachers_skills ts ON t.teacher_id = ts.teacher_id
+      JOIN skills s ON ts.skill_id = s.skill_id
+      WHERE ts.skill_id IN (${skillIdsPlaceholder})
+      AND u.user_type = 'teacher'
+      ORDER BY ts.proficiency_level DESC, t.years_of_experience DESC
+    `,
+      skillIds
+    );
+
+    // Get learners (students) with this skill
+    const [learnersRows] = await pool.query(
+      `
+      SELECT DISTINCT 
+        u.user_id,
+        u.username,
+        u.first_name,
+        u.last_name,
+        u.email,
+        u.user_type,
+        s.grade_level,
+        ss.proficiency_level,
+        sk.skill_name
+      FROM users u
+      JOIN students s ON u.user_id = s.student_id
+      JOIN student_skills ss ON s.student_id = ss.student_id
+      JOIN skills sk ON ss.skill_id = sk.skill_id
+      WHERE ss.skill_id IN (${skillIdsPlaceholder})
+      AND u.user_type = 'student'
+      ORDER BY ss.proficiency_level DESC
+    `,
+      skillIds
+    );
+
+    // Remove sensitive information
+    const mentors = mentorsRows.map((mentor) => {
+      const { password_hash, ...mentorData } = mentor;
+      return mentorData;
+    });
+
+    const learners = learnersRows.map((learner) => {
+      const { password_hash, ...learnerData } = learner;
+      return learnerData;
+    });
+
+    res.status(200).json({
+      success: true,
+      skillName: skillName,
+      mentors: mentors,
+      learners: learners,
+      totalMentors: mentors.length,
+      totalLearners: learners.length,
+    });
+  } catch (error) {
+    console.error("Error getting users by skill name:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to get users by skill name",
+      error: error.message,
+      mentors: [],
+      learners: [],
+    });
+  }
+};

@@ -52,3 +52,31 @@ export const deleteUserSkill = async (skillId) => {
     throw error;
   }
 };
+
+export const getUsersBySkillName = async (skillName) => {
+  try {
+    if (!skillName || typeof skillName !== "string") {
+      throw new Error("Skill name must be a non-empty string");
+    }
+
+    const trimmedSkill = skillName.trim();
+    if (trimmedSkill.length === 0) {
+      throw new Error("Skill name cannot be empty");
+    }
+
+    const response = await axiosInstance.get(
+      `/api/users/getUsersBySkillName/${encodeURIComponent(trimmedSkill)}`
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching users by skill name:", error);
+    // Return empty arrays if there's an error
+    return {
+      success: false,
+      mentors: [],
+      learners: [],
+      totalMentors: 0,
+      totalLearners: 0,
+    };
+  }
+};

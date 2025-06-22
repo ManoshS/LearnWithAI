@@ -278,14 +278,14 @@ const Chat = () => {
               whileTap={{ scale: 0.95 }}
               className="p-2 hover:bg-gray-700/50 rounded-lg transition-colors"
             >
-              <Phone className="w-5 h-5 text-gray-400" />
+              {/* <Phone className="w-5 h-5 text-gray-400" /> */}
             </motion.button>
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               className="p-2 hover:bg-gray-700/50 rounded-lg transition-colors"
             >
-              <Video className="w-5 h-5 text-gray-400" />
+              {/* <Video className="w-5 h-5 text-gray-400" /> */}
             </motion.button>
             <motion.button
               whileHover={{ scale: 1.05 }}
@@ -374,15 +374,15 @@ const Chat = () => {
               onClick={() => fileInputRef.current?.click()}
               className="p-2 hover:bg-gray-700/50 rounded-lg transition-colors"
             >
-              <Paperclip className="w-5 h-5 text-gray-400" />
+              {/* <Paperclip className="w-5 h-5 text-gray-400" /> */}
             </motion.button>
-            <input
+            {/* <input
               type="file"
               ref={fileInputRef}
               onChange={handleFileSelect}
               multiple
               className="hidden"
-            />
+            /> */}
             <input
               type="text"
               value={newMessage}

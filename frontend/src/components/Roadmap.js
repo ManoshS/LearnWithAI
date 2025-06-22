@@ -16,15 +16,45 @@ import {
   Database,
   Server,
   Search,
+  Users,
+  GraduationCap,
+  UserCheck,
+  Star,
+  Eye,
+  MessageCircle,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { getUsersBySkillName } from "../services/skillsService";
 
 const CreateRoadmap = () => {
   const [steps, setSteps] = useState([]);
   const [animate, setAnimate] = useState(false);
   const [topic, setTopic] = useState("");
+  const [mentors, setMentors] = useState([]);
+  const [learners, setLearners] = useState([]);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  const [showUsersSection, setShowUsersSection] = useState(false);
   const navigate = useNavigate();
+
+  // Function to fetch mentors and learners by skill
+  const fetchUsersBySkill = async (skillName) => {
+    setIsLoadingUsers(true);
+    try {
+      const response = await getUsersBySkillName(skillName);
+      if (response.success) {
+        setMentors(response.mentors || []);
+        setLearners(response.learners || []);
+        setShowUsersSection(true);
+      }
+    } catch (error) {
+      console.error("Error fetching users by skill:", error);
+      setMentors([]);
+      setLearners([]);
+    } finally {
+      setIsLoadingUsers(false);
+    }
+  };
 
   useEffect(() => {
     setAnimate(true);
@@ -54,6 +84,9 @@ const CreateRoadmap = () => {
       }));
 
       setSteps(roadmapSteps);
+
+      // Fetch mentors and learners for this topic
+      fetchUsersBySkill(topic);
     } catch (error) {
       console.error("Error parsing roadmap:", error);
       navigate("/");
@@ -330,6 +363,257 @@ const CreateRoadmap = () => {
           )}
         </div>
       </div>
+
+      {/* Mentors and Learners Section */}
+      <AnimatePresence>
+        {showUsersSection && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12"
+          >
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+                Connect with {topic} Community
+              </h2>
+              <p className="text-xl text-gray-300">
+                Find mentors to guide you and learners to collaborate with
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Mentors Section */}
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+                className="bg-gray-800/50 backdrop-blur-lg rounded-xl p-6 border border-gray-700"
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                      <GraduationCap className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-semibold text-white">
+                        Mentors
+                      </h3>
+                      <p className="text-gray-400 text-sm">
+                        {mentors.length} experienced {topic} professionals
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-blue-400">
+                      {mentors.length}
+                    </div>
+                    <div className="text-xs text-gray-500">Available</div>
+                  </div>
+                </div>
+
+                {isLoadingUsers ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                  </div>
+                ) : mentors.length > 0 ? (
+                  <div className="space-y-4 max-h-80 overflow-y-auto">
+                    {mentors.slice(0, 5).map((mentor, index) => (
+                      <motion.div
+                        key={mentor.user_id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className="flex items-center gap-4 p-4 bg-gray-700/50 rounded-lg border border-gray-600 hover:border-blue-500/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 p-0.5">
+                            <div className="w-full h-full rounded-full bg-gray-800 flex items-center justify-center">
+                              <img
+                                src={
+                                  mentor.profile_image ||
+                                  `https://ui-avatars.com/api/?name=${
+                                    mentor.first_name + " " + mentor.last_name
+                                  }&background=random`
+                                }
+                                alt={`${mentor.first_name} ${mentor.last_name}`}
+                                className="w-6 h-6 rounded-full object-cover"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-medium text-white">
+                            {mentor.first_name} {mentor.last_name}
+                          </h4>
+                          {/* <p className="text-sm text-gray-400">
+                            {mentor.years_of_experience || 0} years experience
+                          </p> */}
+                          {/* <div className="flex items-center gap-2 mt-1">
+                            <div className="flex items-center gap-1">
+                              {[...Array(5)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`w-3 h-3 ${
+                                    i < (mentor.proficiency_level || 3)
+                                      ? "text-yellow-400 fill-current"
+                                      : "text-gray-600"
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                            <span className="text-xs text-gray-500">
+                              Level {mentor.proficiency_level || 3}
+                            </span>
+                          </div> */}
+                        </div>
+                        <button className="p-2 bg-blue-500/20 hover:bg-blue-500/30 rounded-lg transition-colors">
+                          <Eye
+                            className="w-5 h-5 text-blue-400"
+                            onClick={() => {
+                              window.scrollTo(0, 0);
+                              navigate(`/${mentor.user_id}`);
+                            }}
+                          />
+                        </button>
+                      </motion.div>
+                    ))}
+                    {mentors.length > 5 && (
+                      <div className="text-center py-2">
+                        <span className="text-sm text-gray-400">
+                          +{mentors.length - 5} more mentors
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Users className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+                    <p className="text-gray-400">
+                      No mentors found for this skill
+                    </p>
+                  </div>
+                )}
+              </motion.div>
+
+              {/* Learners Section */}
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: 0.5 }}
+                className="bg-gray-800/50 backdrop-blur-lg rounded-xl p-6 border border-gray-700"
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-teal-500 rounded-full flex items-center justify-center">
+                      <UserCheck className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-semibold text-white">
+                        Learners
+                      </h3>
+                      <p className="text-gray-400 text-sm">
+                        {learners.length} students learning {topic}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-green-400">
+                      {learners.length}
+                    </div>
+                    <div className="text-xs text-gray-500">Active</div>
+                  </div>
+                </div>
+
+                {isLoadingUsers ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>
+                  </div>
+                ) : learners.length > 0 ? (
+                  <div className="space-y-4 max-h-80 overflow-y-auto">
+                    {learners.slice(0, 5).map((learner, index) => (
+                      <motion.div
+                        key={learner.user_id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className="flex items-center gap-4 p-4 bg-gray-700/50 rounded-lg border border-gray-600 hover:border-green-500/50 transition-colors"
+                      >
+                        {console.log(learner)}
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 p-0.5">
+                            <div className="w-full h-full rounded-full bg-gray-800 flex items-center justify-center">
+                              <img
+                                src={
+                                  learner.profile_image ||
+                                  `https://ui-avatars.com/api/?name=${
+                                    learner.first_name + " " + learner.last_name
+                                  }&background=random`
+                                }
+                                alt={`${learner.first_name} ${learner.last_name}`}
+                                className="w-6 h-6 rounded-full object-cover"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex-1">
+                          <h4 className="font-medium text-white">
+                            {learner.first_name} {learner.last_name}
+                          </h4>
+                          {/* <p className="text-sm text-gray-400">
+                            {learner.grade_level || "Student"}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <div className="flex items-center gap-1">
+                              {[...Array(5)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`w-3 h-3 ${
+                                    i < (learner.proficiency_level || 1)
+                                      ? "text-yellow-400 fill-current"
+                                      : "text-gray-600"
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                            <span className="text-xs text-gray-500">
+                              Level {learner.proficiency_level || 1}
+                            </span>
+                          </div> */}
+                        </div>
+                        <button className="p-2 bg-green-500/20 hover:bg-green-500/30 rounded-lg transition-colors">
+                          <Eye
+                            className="w-5 h-5 text-green-400"
+                            onClick={() => {
+                              window.scrollTo(0, 0);
+                              navigate(`/${learner.user_id}`);
+                            }}
+                          />
+                        </button>
+                      </motion.div>
+                    ))}
+                    {learners.length > 5 && (
+                      <div className="text-center py-2">
+                        <span className="text-sm text-gray-400">
+                          +{learners.length - 5} more learners
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Users className="w-12 h-12 text-gray-600 mx-auto mb-3" />
+                    <p className="text-gray-400">
+                      No learners found for this skill
+                    </p>
+                  </div>
+                )}
+              </motion.div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
