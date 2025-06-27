@@ -6,8 +6,16 @@ const getCurrentUser = () => {
 
   try {
     // Decode the JWT to get user information
-    const user = jwtDecode(token);
-    return user;
+    //check if the token is expired
+    const decoded = jwtDecode(token);
+    const currentTime = Date.now() / 1000;
+    if (decoded.exp < currentTime) {
+      localStorage.removeItem("jwtToken");
+      localStorage.removeItem("userId");
+
+      return null;
+    }
+    return decoded;
   } catch (error) {
     console.error("Invalid token:", error);
     return null;

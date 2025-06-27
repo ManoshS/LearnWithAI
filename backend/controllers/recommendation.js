@@ -7,27 +7,36 @@ const User = require("../models/User");
 exports.getUsersByAnySkills = async (req, res) => {
   const { skillsList } = req.body;
   try {
-    let data = "(";
-    for (let i in skillsList) {
-      data += i + ",";
+    if (!Array.isArray(skillsList) || skillsList.length === 0) {
+      return res
+        .status(400)
+        .json({ message: "skillsList must be a non-empty array" });
     }
-    data = data.substring(0, data.length - 1);
-    data += ")";
+    // Prepare placeholders for parameterized query
+    const placeholders = skillsList.map(() => "?").join(",");
+    const numSkills = skillsList.length;
 
-    // Query to get both students and teachers with matching skills
-    const [users] = await pool.query(`
-            SELECT DISTINCT 
-                'student' as user_type,
-                student_id as user_id
-            FROM student_skills 
-            WHERE skill_id IN ${data}
-            UNION ALL
-            SELECT DISTINCT 
-                'teacher' as user_type,
-                teacher_id as user_id
-            FROM teachers_skills 
-            WHERE skill_id IN ${data}
-        `);
+    // Students who have ANY of the skills
+    const [students] = await pool.query(
+      `SELECT u.*, 'student' as user_type
+       FROM users u
+       JOIN student_skills ss ON u.user_id = ss.student_id
+       WHERE ss.skill_id IN (${placeholders}) AND u.user_type = 'student'
+       GROUP BY u.user_id`,
+      skillsList
+    );
+
+    // Teachers who have ANY of the skills
+    const [teachers] = await pool.query(
+      `SELECT u.*, 'teacher' as user_type
+       FROM users u
+       JOIN teachers_skills ts ON u.user_id = ts.teacher_id
+       WHERE ts.skill_id IN (${placeholders}) AND u.user_type = 'teacher'
+       GROUP BY u.user_id`,
+      skillsList
+    );
+
+    const users = [...students, ...teachers];
 
     if (users.length > 0) {
       return res.status(200).json(users);
