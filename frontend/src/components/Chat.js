@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import axiosInstance from "../authComponent/axiosConnection";
 import io from "socket.io-client";
+import { Tag, Tooltip } from "antd";
 
 const Chat = () => {
   const { userId } = useParams();
@@ -33,6 +34,7 @@ const Chat = () => {
   const currentUserId = localStorage.getItem("userId");
   const [attachments, setAttachments] = useState([]);
   const fileInputRef = useRef(null);
+  const [isOtherUserOnline, setIsOtherUserOnline] = useState(false);
 
   // Check connection status first
   useEffect(() => {
@@ -146,6 +148,42 @@ const Chat = () => {
     };
   }, [userId, currentUserId, isConnected]);
 
+  // Listen for online/offline events and check status on mount
+  useEffect(() => {
+    if (!isConnected) return;
+    if (!socketRef.current) return;
+
+    const handleUserOnline = ({ userId: onlineUserId }) => {
+      if (String(onlineUserId) === String(userId)) setIsOtherUserOnline(true);
+    };
+    const handleUserOffline = ({ userId: offlineUserId }) => {
+      if (String(offlineUserId) === String(userId)) setIsOtherUserOnline(false);
+    };
+    const handleOnlineStatusResponse = ({ userId: targetId, online }) => {
+      if (String(targetId) === String(userId)) setIsOtherUserOnline(!!online);
+    };
+
+    socketRef.current.on("user_online", handleUserOnline);
+    socketRef.current.on("user_offline", handleUserOffline);
+    socketRef.current.on("online_status_response", handleOnlineStatusResponse);
+
+    // Request current online status of the other user
+    socketRef.current.emit("check_online_status", userId, (data) => {
+      if (data && String(data.userId) === String(userId)) {
+        setIsOtherUserOnline(!!data.online);
+      }
+    });
+
+    return () => {
+      socketRef.current.off("user_online", handleUserOnline);
+      socketRef.current.off("user_offline", handleUserOffline);
+      socketRef.current.off(
+        "online_status_response",
+        handleOnlineStatusResponse
+      );
+    };
+  }, [isConnected, userId]);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -248,7 +286,7 @@ const Chat = () => {
               <X className="w-5 h-5 text-gray-400" />
             </motion.button>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 p-0.5">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 p-0.5 relative">
                 <div className="w-full h-full rounded-full bg-gray-800 flex items-center justify-center">
                   <img
                     src={
@@ -261,6 +299,15 @@ const Chat = () => {
                     className="w-6 h-6 text-gray-400"
                   />
                 </div>
+                {isOtherUserOnline && (
+                  <Tooltip title="online" placement="top">
+                    <span
+                      className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-gray-800 rounded-full "
+                      title="Online"
+                      style={{ color: "white", fontSize: "15px" }}
+                    ></span>
+                  </Tooltip>
+                )}
               </div>
               <div>
                 <h2 className="text-white font-semibold">

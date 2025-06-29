@@ -1,10 +1,16 @@
+const onlineUsers = new Set();
+
 const handleConnection = (socket, io) => {
   console.log("Client connected:", socket.id);
 
   // Handle user joining their room
   socket.on("join", (userId) => {
     socket.join(`user:${userId}`);
+    socket.userId = userId;
+    onlineUsers.add(userId);
     console.log(`User ${userId} joined their room: user:${userId}`);
+    // Notify all clients that this user is online
+    io.emit("user_online", { userId });
   });
 
   // Handle new message
@@ -40,10 +46,28 @@ const handleConnection = (socket, io) => {
 
   // Handle disconnection
   socket.on("disconnect", () => {
+    if (socket.userId) {
+      onlineUsers.delete(socket.userId);
+      io.emit("user_offline", { userId: socket.userId });
+    }
     console.log("Client disconnected:", socket.id);
+  });
+
+  // Handle check online status
+  socket.on("check_online_status", (targetUserId, callback) => {
+    const online = isUserOnline(targetUserId);
+    if (typeof callback === "function") {
+      callback({ userId: targetUserId, online });
+    } else {
+      // fallback: emit to the socket
+      socket.emit("online_status_response", { userId: targetUserId, online });
+    }
   });
 };
 
+const isUserOnline = (userId) => onlineUsers.has(String(userId));
+
 module.exports = {
   handleConnection,
+  isUserOnline,
 };

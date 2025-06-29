@@ -126,6 +126,8 @@ const UserProfile = ({ id }) => {
   const [totalConnections, setTotalConnections] = useState(0);
   const [activeTab, setActiveTab] = useState("about");
   const [isEditing, setIsEditing] = useState(false);
+  const [newPostContent, setNewPostContent] = useState("");
+  const [commentInputs, setCommentInputs] = useState({});
 
   const stats = [
     {
@@ -180,6 +182,23 @@ const UserProfile = ({ id }) => {
         const postsResponse = await axiosInstance.get(
           `/api/posts/getAllPosts/${userId}`
         );
+        var postDetails = [...postsResponse.data];
+        console.log(postDetails);
+        postDetails?.map(async (item) => {
+          const postLikeCount = await axiosInstance.get(
+            `/api/likes/getAllLikes/${item.post_id}`
+          );
+          // console.log("Helloooooooooo!", item, postLikeCount.data.count);
+          const postComments = await axiosInstance.get(
+            `/api/comments/getAllComments/${item.post_id}`
+          );
+          console.log("Helloooooooooo!", postComments.data);
+          item["likesCount"] = postLikeCount?.data?.count;
+          item["comments"] = postComments?.data;
+          console.log(item);
+        });
+        // console.log("Hellllllo! ", postDetails);
+        setPosts(postDetails);
         setPosts(postsResponse.data);
       } catch (error) {
         console.error("Error fetching posts:", error);
@@ -305,7 +324,23 @@ const UserProfile = ({ id }) => {
         const postsResponse = await axiosInstance.get(
           `/api/posts/getAllPosts/${userId}`
         );
-        setPosts(postsResponse.data);
+        var postDetails = [...postsResponse.data];
+        console.log(postDetails);
+        postDetails?.map(async (item) => {
+          const postLikeCount = await axiosInstance.get(
+            `/api/likes/getAllLikes/${item.post_id}`
+          );
+          // console.log("Helloooooooooo!", item, postLikeCount.data.count);
+          const postComments = await axiosInstance.get(
+            `/api/comments/getAllComments/${item.post_id}`
+          );
+          console.log("Helloooooooooo!", postComments.data);
+          item["likesCount"] = postLikeCount?.data?.count;
+          item["comments"] = postComments?.data;
+          console.log(item);
+        });
+        // console.log("Hellllllo! ", postDetails);
+        setPosts(postDetails);
       } catch (error) {
         console.error("Error fetching posts:", error);
       }
@@ -502,6 +537,85 @@ const UserProfile = ({ id }) => {
       setConnectionStatus("pending");
     } catch (err) {
       console.error("Error connecting with user:", err);
+    }
+  };
+
+  // Handler to create a new post
+  const handleCreatePost = async (e) => {
+    e.preventDefault();
+    if (!newPostContent.trim()) return;
+    try {
+      const response = await axiosInstance.post("/api/posts/createPost", {
+        user_id: currentUserId,
+        content: newPostContent,
+      });
+      setNewPostContent("");
+      // Optionally, prepend the new post to the posts list
+      setPosts((prev) => [
+        {
+          ...{
+            user_id: currentUserId,
+            content: newPostContent,
+          },
+          likesCount: 0,
+          comments: [],
+        },
+        ...prev,
+      ]);
+    } catch (err) {
+      console.error("Error creating post:", err);
+    }
+  };
+
+  // Handler to create a new comment for a post
+  const handleCreateComment = async (postId, e) => {
+    e.preventDefault();
+    const content = commentInputs[postId]?.trim();
+    if (!content) return;
+    try {
+      const response = await axiosInstance.post("/api/comments/addComment", {
+        user_id: currentUserId,
+        post_id: postId,
+        content,
+      });
+      setCommentInputs((prev) => ({ ...prev, [postId]: "" }));
+      // Refresh comments for the post
+      setPosts((prevPosts) =>
+        prevPosts.map((post) =>
+          post.post_id === postId
+            ? {
+                ...post,
+                comments: post.comments
+                  ? [
+                      ...post.comments,
+                      { user_id: currentUserId, post_id: postId, content },
+                    ]
+                  : [{ user_id: currentUserId, post_id: postId, content }],
+              }
+            : post
+        )
+      );
+    } catch (err) {
+      console.error("Error creating comment:", err);
+    }
+  };
+
+  const handleLikePost = async (postId) => {
+    try {
+      await axiosInstance.post("/api/likes/addLike", {
+        user_id: currentUserId,
+        post_id: postId,
+      });
+      // Update likesCount in UI
+      setPosts((prevPosts) =>
+        prevPosts.map((post) =>
+          post.post_id === postId
+            ? { ...post, likesCount: (post.likesCount || 0) + 1 }
+            : post
+        )
+      );
+    } catch (err) {
+      console.error("Error liking post:", err);
     }
   };
 
@@ -724,10 +838,30 @@ const UserProfile = ({ id }) => {
               <h2 className="text-lg font-semibold text-white mb-4">
                 Recent Posts
               </h2>
+              {/* Send Post Form (only for current user) */}
+              {userId === currentUserId && (
+                <form onSubmit={handleCreatePost} className="mb-6">
+                  <textarea
+                    className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-blue-500 resize-none mb-2"
+                    rows={2}
+                    placeholder="What's on your mind?"
+                    value={newPostContent}
+                    onChange={(e) => setNewPostContent(e.target.value)}
+                  />
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    type="submit"
+                    className="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-2 rounded-lg hover:opacity-90 transition-all duration-200"
+                  >
+                    Send Post
+                  </motion.button>
+                </form>
+              )}
               <div className="space-y-6">
                 {posts.map((post) => (
                   <motion.div
-                    key={post.id}
+                    key={post?.post_id}
                     whileHover={{ scale: 1.02 }}
                     className="bg-gray-700/50 rounded-lg p-4 border border-gray-600 hover:border-blue-500/50 transition-colors"
                   >
@@ -737,9 +871,10 @@ const UserProfile = ({ id }) => {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         className="flex items-center hover:text-blue-400"
+                        onClick={() => handleLikePost(post.post_id)}
                       >
                         <ThumbsUp className="w-4 h-4 mr-1" />
-                        {post.likes}
+                        {post?.likesCount}
                       </motion.button>
                       <motion.button
                         whileHover={{ scale: 1.05 }}
@@ -747,7 +882,7 @@ const UserProfile = ({ id }) => {
                         className="flex items-center hover:text-blue-400"
                       >
                         <MessageSquare className="w-4 h-4 mr-1" />
-                        {post.comments}
+                        {post?.comments?.length}
                       </motion.button>
                       <motion.button
                         whileHover={{ scale: 1.05 }}
@@ -758,6 +893,55 @@ const UserProfile = ({ id }) => {
                         Share
                       </motion.button>
                       <span className="ml-auto">{post.timeAgo}</span>
+                    </div>
+                    {/* Comments Section */}
+                    <div className="mt-4">
+                      <h4 className="text-sm text-gray-400 mb-2">Comments</h4>
+                      <div className="space-y-2">
+                        {post.comments && post.comments.length > 0 ? (
+                          post.comments.map((comment, idx) => (
+                            <div
+                              key={comment.comment_id || idx}
+                              className="bg-gray-800/60 rounded p-2 text-gray-200 text-sm"
+                            >
+                              <span className="font-semibold">
+                                {comment.user_id}
+                              </span>
+                              : {comment.content}
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-gray-500 text-xs">
+                            No comments yet.
+                          </div>
+                        )}
+                      </div>
+                      {/* Add Comment Form */}
+                      <form
+                        onSubmit={(e) => handleCreateComment(post.post_id, e)}
+                        className="flex items-center mt-2 gap-2"
+                      >
+                        <input
+                          type="text"
+                          className="flex-1 p-1 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-blue-500 text-sm"
+                          placeholder="Add a comment..."
+                          value={commentInputs[post.post_id] || ""}
+                          onChange={(e) =>
+                            setCommentInputs((prev) => ({
+                              ...prev,
+                              [post.post_id]: e.target.value,
+                            }))
+                          }
+                        />
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          type="submit"
+                          className="bg-blue-500 text-white px-3 py-1 rounded-lg text-xs"
+                        >
+                          Comment
+                        </motion.button>
+                      </form>
                     </div>
                   </motion.div>
                 ))}
