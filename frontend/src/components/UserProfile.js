@@ -182,24 +182,74 @@ const UserProfile = ({ id }) => {
         const postsResponse = await axiosInstance.get(
           `/api/posts/getAllPosts/${userId}`
         );
-        var postDetails = [...postsResponse.data];
-        console.log(postDetails);
-        postDetails?.map(async (item) => {
-          const postLikeCount = await axiosInstance.get(
-            `/api/likes/getAllLikes/${item.post_id}`
-          );
-          // console.log("Helloooooooooo!", item, postLikeCount.data.count);
-          const postComments = await axiosInstance.get(
-            `/api/comments/getAllComments/${item.post_id}`
-          );
-          console.log("Helloooooooooo!", postComments.data);
-          item["likesCount"] = postLikeCount?.data?.count;
-          item["comments"] = postComments?.data;
-          console.log(item);
-        });
-        // console.log("Hellllllo! ", postDetails);
-        setPosts(postDetails);
-        setPosts(postsResponse.data);
+        const postDetails = [...postsResponse.data];
+        console.log("Initial posts:", postDetails);
+
+        // Process all posts with their likes and comments
+        const processedPosts = await Promise.all(
+          postDetails.map(async (item) => {
+            try {
+              // Get likes count
+              const postLikeCount = await axiosInstance.get(
+                `/api/likes/getAllLikes/${item.post_id}`
+              );
+
+              // Get comments
+              const postComments = await axiosInstance.get(
+                `/api/comments/getAllComments/${item.post_id}`
+              );
+
+              // Process comments to get user names
+              const comments = await Promise.all(
+                postComments.data.map(async (comment) => {
+                  try {
+                    const userdata = await axiosInstance.get(
+                      `/api/users/get/${comment.user_id}`
+                    );
+                    return {
+                      ...comment,
+                      user_name: userdata.data.first_name,
+                      last_name: userdata.data.last_name,
+                    };
+                  } catch (error) {
+                    console.error(
+                      "Error fetching user data for comment:",
+                      error
+                    );
+                    return {
+                      ...comment,
+                      user_name: "Unknown User",
+                      last_name: "",
+                    };
+                  }
+                })
+              );
+
+              console.log(
+                "Processed comments for post",
+                item.post_id,
+                ":",
+                comments
+              );
+
+              return {
+                ...item,
+                likesCount: postLikeCount?.data?.count || 0,
+                comments: comments || [],
+              };
+            } catch (error) {
+              console.error("Error processing post", item.post_id, ":", error);
+              return {
+                ...item,
+                likesCount: 0,
+                comments: [],
+              };
+            }
+          })
+        );
+
+        console.log("Final processed posts:", processedPosts);
+        setPosts(processedPosts);
       } catch (error) {
         console.error("Error fetching posts:", error);
       }
@@ -324,23 +374,74 @@ const UserProfile = ({ id }) => {
         const postsResponse = await axiosInstance.get(
           `/api/posts/getAllPosts/${userId}`
         );
-        var postDetails = [...postsResponse.data];
-        console.log(postDetails);
-        postDetails?.map(async (item) => {
-          const postLikeCount = await axiosInstance.get(
-            `/api/likes/getAllLikes/${item.post_id}`
-          );
-          // console.log("Helloooooooooo!", item, postLikeCount.data.count);
-          const postComments = await axiosInstance.get(
-            `/api/comments/getAllComments/${item.post_id}`
-          );
-          console.log("Helloooooooooo!", postComments.data);
-          item["likesCount"] = postLikeCount?.data?.count;
-          item["comments"] = postComments?.data;
-          console.log(item);
-        });
-        // console.log("Hellllllo! ", postDetails);
-        setPosts(postDetails);
+        const postDetails = [...postsResponse.data];
+        console.log("Initial posts:", postDetails);
+
+        // Process all posts with their likes and comments
+        const processedPosts = await Promise.all(
+          postDetails.map(async (item) => {
+            try {
+              // Get likes count
+              const postLikeCount = await axiosInstance.get(
+                `/api/likes/getAllLikes/${item.post_id}`
+              );
+
+              // Get comments
+              const postComments = await axiosInstance.get(
+                `/api/comments/getAllComments/${item.post_id}`
+              );
+
+              // Process comments to get user names
+              const comments = await Promise.all(
+                postComments.data.map(async (comment) => {
+                  try {
+                    const userdata = await axiosInstance.get(
+                      `/api/users/get/${comment.user_id}`
+                    );
+                    return {
+                      ...comment,
+                      user_name: userdata.data.first_name,
+                      last_name: userdata.data.last_name,
+                    };
+                  } catch (error) {
+                    console.error(
+                      "Error fetching user data for comment:",
+                      error
+                    );
+                    return {
+                      ...comment,
+                      user_name: "Unknown User",
+                      last_name: "",
+                    };
+                  }
+                })
+              );
+
+              console.log(
+                "Processed comments for post",
+                item.post_id,
+                ":",
+                comments
+              );
+
+              return {
+                ...item,
+                likesCount: postLikeCount?.data?.count || 0,
+                comments: comments || [],
+              };
+            } catch (error) {
+              console.error("Error processing post", item.post_id, ":", error);
+              return {
+                ...item,
+                likesCount: 0,
+                comments: [],
+              };
+            }
+          })
+        );
+
+        console.log("Final processed posts:", processedPosts);
+        setPosts(processedPosts);
       } catch (error) {
         console.error("Error fetching posts:", error);
       }
@@ -579,18 +680,29 @@ const UserProfile = ({ id }) => {
         content,
       });
       setCommentInputs((prev) => ({ ...prev, [postId]: "" }));
-      // Refresh comments for the post
+
+      // Get current user data for the new comment
+      const userResponse = await axiosInstance.get(
+        `/api/users/get/${currentUserId}`
+      );
+      const newComment = {
+        comment_id: response.data.comment_id || Date.now(), // Use response ID or fallback
+        user_id: currentUserId,
+        post_id: postId,
+        content,
+        user_name: userResponse.data.first_name,
+        last_name: userResponse.data.last_name,
+      };
+
+      // Update posts state with the new comment
       setPosts((prevPosts) =>
         prevPosts.map((post) =>
           post.post_id === postId
             ? {
                 ...post,
                 comments: post.comments
-                  ? [
-                      ...post.comments,
-                      { user_id: currentUserId, post_id: postId, content },
-                    ]
-                  : [{ user_id: currentUserId, post_id: postId, content }],
+                  ? [...post.comments, newComment]
+                  : [newComment],
               }
             : post
         )
@@ -905,7 +1017,7 @@ const UserProfile = ({ id }) => {
                               className="bg-gray-800/60 rounded p-2 text-gray-200 text-sm"
                             >
                               <span className="font-semibold">
-                                {comment.user_id}
+                                {comment.user_name ? comment.user_name : "You"}
                               </span>
                               : {comment.content}
                             </div>
